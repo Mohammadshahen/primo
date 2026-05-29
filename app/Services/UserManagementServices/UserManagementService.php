@@ -1,0 +1,594 @@
+<?php
+
+namespace App\Services\UserManagementServices;
+
+use App\Models\Device;
+use Carbon\Carbon;
+use App\Models\Store;
+use App\Models\Driver;
+use App\Models\User;
+use App\Services\Service;
+use App\Services\FileStorage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use App\Models\UserManagement\Provider;
+use App\Services\UserManagementServices\OTPService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+class UserManagementService extends Service
+{
+    protected $otpService;
+
+    public function __construct(OTPService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
+
+    /**
+     *
+     * @param array $data
+     * @return array{token: string, user: User}
+     */
+    public function register(array $data)
+    {
+        DB::beginTransaction();
+
+        try {
+            // التحقق من وجود الرقم مسبقاً
+            $existingUser = User::where('phone', $data['phone'])->first();
+
+            if ($existingUser) {
+                // إذا كان الحساب موجود ومفعل
+                if ($existingUser->isPhoneVerified()) {
+                    return [
+                        'success' => false,
+                        'message' => 'رقم الهاتف مسجل مسبقاً',
+                    ];
+                }
+            }
+
+            // إنشاء حساب جديد غير مؤكد
+            $avatarPath = isset($data['avatar'])
+                ? FileStorage::storeFile($data['avatar'], 'avatars', 'img')
+                : null;
+
+            $user = User::create([
+                'name'              => $data['name'],
+                'phone'             => $data['phone'],
+                'password'          => Hash::make($data['password']),
+                'avatar'            => $avatarPath,
+                'is_admin'          => 0,
+                'phone_verified_at' => null, // غير مؤكد
+            ]);
+
+            // إرسال OTP للتأكيد
+            try {
+                $this->otpService->generateOTP($data['phone'], 'register');
+
+                DB::commit();
+
+                return [
+                    'success'        => true,
+                    'otp_required'   => true,
+                    'account_exists' => false,
+                    'message'        => 'تم إنشاء الحساب بنجاح. تم إرسال كود التحقق إلى واتساب',
+                ];
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'فشل في إرسال كود التحقق',
+                ];
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'success' => false,
+                'message' => 'فشل في إنشاء الحساب',
+            ];
+        }
+    }
+
+    /**
+     * تأكيد الحساب مع OTP (عملية منفصلة)
+     */
+    public function confirmRegistration(array $data)
+    {
+        DB::beginTransaction();
+
+        // try {
+            $user = User::where('phone', $data['phone'])->first();
+
+            if (! $user) {
+                return [
+                    'success' => false,
+                    'message' => 'الحساب غير موجود',
+                ];
+            }
+
+            if ($user->isPhoneVerified()) {
+                return [
+                    'success' => false,
+                    'message' => 'الحساب مفعل مسبقاً',
+                ];
+            }
+
+            // التحقق من OTP
+            $verification = $this->otpService->verifyOTP(
+                $data['phone'],
+                $data['otp_code'],
+                'register'
+            );
+
+            if (! $verification['success']) {
+                return $verification;
+            }
+
+            // تفعيل الحساب
+            $user->update([
+                'phone_verified_at' => Carbon::now(),
+            ]);
+            // إنشاء token بعد التفعيل (access سنة, refresh سنتين)
+            $accessToken = $user->createToken(
+                'mobile-access',
+                ['access-api'],
+                now()->addYear()
+            )->plainTextToken;
+
+            $refreshToken = $user->createToken(
+                'mobile-refresh',
+                ['refresh-token'],
+                now()->addYears(2)
+            )->plainTextToken;
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'data' => [
+                    'user' => $user->fresh(),
+                    'access_token'  => $accessToken,
+                    'refresh_token' => $refreshToken,
+                    'message' => 'تم تفعيل الحساب بنجاح',
+                    'expires_in'    => 31536000, // 1 year
+                ]
+            ];
+        // } catch (\Exception $e) {
+        //     DB::rollBack();
+        //     return [
+        //         'success' => false,
+        //         'message' => 'فشل في تفعيل الحساب',
+        //     ];
+        // }
+    }
+
+    public function login(array $credentials)
+    {
+
+        $account = User::where('phone', $credentials['phone'])->first();
+
+        if (! $account || ! Hash::check($credentials['password'], $account->password)) {
+            return [
+                'success' => false,
+                'message' => 'بيانات الدخول غير صحيحة',
+            ];
+        }
+
+        if ( $account->is_admin) {
+            if (! $account->is_admin) {
+                return [
+                    'success' => false,
+                    'message' => 'غير مصرح لك بالدخول'
+                ];
+            }
+
+            $accessToken = $account->createToken(
+                'admin-access',
+                ['dashboard'],
+                now()->addMinutes(10)
+            )->plainTextToken;
+
+            $refreshToken = $account->createToken(
+                'admin-refresh',
+                ['refresh-dashboard'],
+                now()->addHours(2)
+            )->plainTextToken;
+
+            return [
+                'success' => true,
+                'data' => [
+                    'user'           => $account,
+                    'access_token'   => $accessToken,
+                    'refresh_token'  => $refreshToken,
+                    'expires_in'     => 600, // 10 minutes
+                ],
+            ];
+        }
+
+        if (!$account->isPhoneVerified()) {
+            try {
+                $this->otpService->generateOTP($credentials['phone'], 'register');
+
+                return [
+                    'success' => true,
+                    'otp_required' => true,
+                    'phone_verified' => false,
+                    'message' => 'الحساب غير مفعل. تم إرسال كود التحقق إلى واتساب'
+                ];
+            } catch (\Exception $e) {
+                return [
+                    'success' => false,
+                    'message' => 'فشل في إرسال كود التحقق'
+                ];
+            }
+        }
+        // for regular users (non-admin) set extended durations
+        $accessToken = $account->createToken(
+            'mobile-access',
+            ['access-api'],
+            now()->addYear()
+        )->plainTextToken;
+
+        $refreshToken = $account->createToken(
+            'mobile-refresh',
+            ['refresh-token'],
+            now()->addYears(2)
+        )->plainTextToken;
+
+        return [
+            'success' => true,
+            'data' => [
+                'user'          => $account,
+                'access_token'  => $accessToken,
+                'refresh_token' => $refreshToken,
+                'expires_in'    => 31536000, // 1 year
+            ]
+        ];
+    }
+
+    public function confirmLogin(array $data)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = User::where('phone', $data['phone'])->first();
+
+            if (!$user) {
+                return [
+                    'success' => false,
+                    'message' => 'الحساب غير موجود'
+                ];
+            }
+
+            // التحقق من OTP
+            $verification = $this->otpService->verifyOTP(
+                $data['phone'],
+                $data['otp_code'],
+                'register'
+            );
+
+            if (!$verification['success']) {
+                return $verification;
+            }
+
+            // تفعيل الحساب
+            $user->update([
+                'phone_verified_at' => Carbon::now()
+            ]);
+
+            // إنشاء token بعد التفعيل (access سنة, refresh سنتين)
+            $accessToken = $user->createToken(
+                'mobile-access',
+                ['access-api'],
+                now()->addYear()
+            )->plainTextToken;
+
+            $refreshToken = $user->createToken(
+                'mobile-refresh',
+                ['refresh-token'],
+                now()->addYears(2)
+            )->plainTextToken;
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'data' => [
+                    'type' => 'user',
+                    'user' => $user->fresh(),
+                    'access_token'  => $accessToken,
+                    'refresh_token' => $refreshToken,
+                    'expires_in'    => 31536000, // 1 year
+                ]
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'success' => false,
+                'message' => 'فشل في تأكيد الحساب'
+            ];
+        }
+    }
+
+    public function logout($user)
+    {
+        // حذف أجهزة FCM لإيقاف الإشعارات بعد تسجيل الخروج
+        \App\Models\Device::removeAllDevices($user);
+
+        $user->currentAccessToken()->delete();
+        return ['message' => 'Logged out'];
+    }
+
+
+
+
+    /**
+     * نسيان كلمة المرور - إرسال OTP فقط
+     */
+    public function forgotPassword(array $data)
+    {
+        
+        $account = User::where('phone', $data['phone'])->first();
+
+        if (!$account) {
+            return [
+                'success' => false,
+                'message' => 'رقم الهاتف غير مسجل'
+            ];
+        }
+
+        try {
+            $this->otpService->generateOTP($data['phone'], 'reset_password');
+            return [
+                'success' => true,
+                'message' => 'تم إرسال كود التحقق إلى واتساب'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'فشل في إرسال كود التحقق'
+            ];
+        }
+    }
+
+    /**
+     * تأكيد OTP لنسيان كلمة المرور (عملية منفصلة)
+     */
+    public function confirmForgotPassword(array $data)
+    {
+        $account = User::where('phone', $data['phone'])->first();
+
+        if (!$account) {
+            return [
+                'success' => false,
+                'message' => 'رقم الهاتف غير مسجل'
+            ];
+        }
+
+        // التحقق من OTP فقط
+        $verification = $this->otpService->verifyOTP(
+            $data['phone'],
+            $data['otp_code'],
+            'reset_password'
+        );
+
+        if (!$verification['success']) {
+            return $verification;
+        }
+
+        // نعيد نجاح العملية فقط - التطبيق يوجهه لصفحة تغيير كلمة المرور
+        return [
+            'success' => true,
+            'message' => 'تم التحقق بنجاح، يمكنك الآن تغيير كلمة المرور'
+        ];
+    }
+
+    /**
+     * تغيير كلمة المرور بعد التأكيد
+     */
+    public function resetPassword(array $data)
+    {
+        DB::beginTransaction();
+
+        try {
+            $account = User::where('phone', $data['phone'])->first();
+
+            if (!$account) {
+                return [
+                    'success' => false,
+                    'message' => 'رقم الهاتف غير مسجل'
+                ];
+            }
+
+            // تحديث كلمة المرور مباشرة (تم التحقق مسبقاً)
+            $account->update([
+                'password' => Hash::make($data['password'])
+            ]);
+
+            $account->refresh();
+
+            $passwordUpdated = Hash::check($data['password'], $account->password);
+
+            if (!$passwordUpdated) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'فشل في تحديث كلمة المرور'
+                ];
+            }
+
+
+            DB::commit();
+
+            Log::info('Password reset successfully', [
+                'phone' => $data['phone'],
+                'account_id' => $account->id
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'تم إعادة تعيين كلمة المرور بنجاح'
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Password reset failed', [
+                'phone' => $data['phone'],
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'success' => false,
+                'message' => 'فشل في إعادة تعيين كلمة المرور'
+            ];
+        }
+    }
+
+    /**
+     * إعادة إرسال OTP
+     */
+    public function resendOTP($phone, $type)
+    {
+        try {
+            $this->otpService->generateOTP($phone, $type);
+            return [
+                'success' => true,
+                'message' => 'تم إعادة إرسال كود التحقق'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'فشل في إرسال كود التحقق'
+            ];
+        }
+    }
+
+    /**
+     * delete user account
+     * @param User $user
+     * @return array{message: string, success: bool}
+     */
+    public function deleteAccount($authAccount)
+    {
+        try {
+            if (method_exists($authAccount, 'tokens')) {
+                $authAccount->tokens()->delete();
+            }
+
+            $authAccount->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Account deleted'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete account'
+            ];
+        }
+    }
+
+    public function updateProfile(array $data)
+    {
+        try {
+            /**
+             * @var User $user
+             */
+            $user = Auth::user();
+
+            if (!empty($data['password'])) {
+                $data['password'] = Hash::make($data['password']);
+            }
+
+            $avatar = FileStorage::fileExists(
+                $data['avatar'] ?? null,
+                $user->avatar,
+                'avatars',
+                'img'
+            );
+
+            if ($avatar !== null) {
+                $data['avatar'] = $avatar;
+            } else {
+                unset($data['avatar']);
+            }
+
+            $user->update($data);
+
+            return $user->fresh();
+        } catch (\Throwable $e) {
+            $this->throwExceptionJson(
+                'حدث خطأ أثناء تحديث بياناتك',
+                500,
+                $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * List non-admin users with optional search and pagination
+     *
+     * @param array $params
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
+    public function listUsers(array $params = [])
+    {
+        $query = User::where('is_admin', 0)->withCount(['orders', 'customOrders']);
+
+        if (!empty($params['search'])) {
+            $s = $params['search'];
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                    ->orWhere('phone', 'like', "%{$s}%");
+            });
+        }
+
+        $perPage = isset($params['per_page']) ? (int) $params['per_page'] : 9;
+
+        return $query->orderBy('id', 'desc')->paginate($perPage);
+    }
+
+    /**
+     * Get user by id
+     */
+    public function getUserById($id)
+    {
+        return User::find($id);
+    }
+
+    /**
+     * Delete user by id (also removes tokens)
+     *
+     * @param int $id
+     * @return array
+     */
+    public function deleteUserById($id)
+    {
+        try {
+            $user = User::find($id);
+
+            if (! $user) {
+                return [
+                    'success' => false,
+                    'message' => 'User not found'
+                ];
+            }
+
+            if (method_exists($user, 'tokens')) {
+                $user->tokens()->delete();
+            }
+
+            $user->delete();
+
+            return [
+                'success' => true,
+                'message' => 'User deleted'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Failed to delete user'
+            ];
+        }
+    }
+}
