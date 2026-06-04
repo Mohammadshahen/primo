@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategorieController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -23,3 +24,8 @@ Route::post('resend-otp', [UserManagementController::class, 'resendOTP']);
 
 Route::middleware('auth:sanctum')->post('/logout', [UserManagementController::class, 'logout']);
 Route::middleware('auth:sanctum')->delete('/account/delete', [UserManagementController::class, 'deleteAccount']);
+
+
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    Route::apiResource('categories', CategorieController::class);
+});

@@ -15,7 +15,7 @@ abstract class Controller
     protected function success($data, $message = 'نجاح العملية', $code = 200)
     {
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => $message,
             'data' => $data
         ], $code);
@@ -32,7 +32,7 @@ abstract class Controller
     protected function error($message = 'حدث خطأ ما', $code = 500, $errors = null)
     {
         $response = [
-            'status' => 'error',
+            'success' => false,
             'message' => $message,
         ];
 
@@ -53,7 +53,7 @@ abstract class Controller
     protected function paginate($paginatedData, $message = 'تم جلب البيانات بنجاح')
     {
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => $message,
             'data' => $paginatedData->items(),
             'meta' => [
@@ -67,7 +67,7 @@ abstract class Controller
      protected function paginateWithData($paginatedData,$data, $message = 'تم جلب البيانات بنجاح')
     {
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => $message,
             'data' => $paginatedData->items(),
             'additional_data' => $data,

@@ -464,7 +464,7 @@ class UserManagementService extends Service
 
     /**
      * delete user account
-     * @param User $user
+     * @param User $authAccount
      * @return array{message: string, success: bool}
      */
     public function deleteAccount($authAccount)
