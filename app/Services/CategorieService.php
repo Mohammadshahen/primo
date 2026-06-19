@@ -26,6 +26,8 @@ class CategorieService extends Service
                 'data' => $categorie,
             ];
         } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' create');
+
             return [
                 'success' => false,
                 'message' => 'فشل إنشاء الفئة',
@@ -48,6 +50,8 @@ class CategorieService extends Service
                 'data' => $categorie,
             ];
         } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' update');
+
             return [
                 'success' => false,
                 'message' => 'فشل تحديث الفئة',
@@ -69,6 +73,8 @@ class CategorieService extends Service
                 'data' => [],
             ];
         } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' delete');
+
             return [
                 'success' => false,
                 'message' => 'فشل حذف الفئة',

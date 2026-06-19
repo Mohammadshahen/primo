@@ -1,0 +1,410 @@
+{
+  "info": {
+    "_postman_id": "b5db09c8-8f9a-4e4b-9a0f-8c1f2e5b4a7d",
+    "name": "Primo API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for Primo admin API with saved successful and error responses."
+  },
+  "event": [],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+963911113333\",\n  \"password\": \"12345678\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Successful Login",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+963911113333\",\n  \"password\": \"12345678\"\n}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_body": "{\n  \"success\": true,\n  \"message\": \"Login successfully\",\n  \"data\": {\n    \"user\": {\n      \"id\": 1,\n      \"name\": \"Admin\",\n      \"phone\": \"+963911113333\",\n      \"phone_verified_at\": \"2026-06-12T00:00:00.000000Z\",\n      \"avatar\": null,\n      \"is_admin\": true,\n      \"notification_offer\": false,\n      \"notification_order\": false,\n      \"created_at\": \"2026-06-12T00:00:00.000000Z\",\n      \"updated_at\": \"2026-06-12T00:00:00.000000Z\"\n    },\n    \"access_token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOi...\",\n    \"refresh_token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOi...\",\n    \"expires_in\": 600\n  }\n}"
+        },
+        {
+          "name": "Invalid Credentials",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+963900000000\",\n  \"password\": \"wrongpass\"\n}"
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_body": "{\n  \"success\": false,\n  \"message\": \"بيانات الدخول غير صحيحة\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Admin Products",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/products",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "products"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Products List",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_body": "{\n  \"success\": true,\n  \"message\": \"تم جلب المنتجات بنجاح\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"category_id\": 1,\n      \"name\": \"هاتف ذكي\",\n      \"image\": null,\n      \"description\": \"هاتف ذكي حديث مع كاميرا عالية الجودة.\",\n      \"sku_code\": \"PRD-SMART-001\",\n      \"created_at\": \"2026-06-12T12:00:00.000000Z\",\n      \"category\": {\n        \"id\": 1,\n        \"name\": \"الكترونيات\"\n      }\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/products",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "products"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category_id\": 1,\n  \"name\": \"منتج تجريبي\",\n  \"description\": \"وصف منتج جديد.\",\n  \"sku_code\": \"PRD-TEST-100\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Created Successfully",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 1,\n  \"name\": \"منتج تجريبي\",\n  \"description\": \"وصف منتج جديد.\",\n  \"sku_code\": \"PRD-TEST-100\"\n}"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_body": "{\n  \"success\": true,\n  \"message\": \"تم إنشاء المنتج بنجاح\",\n  \"data\": {\n    \"id\": 10,\n    \"category_id\": 1,\n    \"name\": \"منتج تجريبي\",\n    \"image\": null,\n    \"description\": \"وصف منتج جديد.\",\n    \"sku_code\": \"PRD-TEST-100\",\n    \"created_at\": \"2026-06-12T12:00:00.000000Z\",\n    \"updated_at\": \"2026-06-12T12:00:00.000000Z\",\n    \"category\": {\n      \"id\": 1,\n      \"name\": \"الكترونيات\"\n    }\n  }\n}"
+        },
+        {
+          "name": "Validation Error",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}"
+            }
+          },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "_body": "{\n  \"message\": \"The given data was invalid.\",\n  \"errors\": {\n    \"category_id\": [\"The category id field is required.\"],\n    \"name\": [\"The name field is required.\"],\n    \"sku_code\": [\"The sku code field is required.\"]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Product",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/products/10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "products",
+            "10"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category_id\": 1,\n  \"name\": \"منتج محدث\",\n  \"description\": \"وصف محدث للمنتج.\",\n  \"sku_code\": \"PRD-TEST-100\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Updated Successfully",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "10"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 1,\n  \"name\": \"منتج محدث\",\n  \"description\": \"وصف محدث للمنتج.\",\n  \"sku_code\": \"PRD-TEST-100\"\n}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_body": "{\n  \"success\": true,\n  \"message\": \"تم تحديث المنتج بنجاح\",\n  \"data\": {\n    \"id\": 10,\n    \"category_id\": 1,\n    \"name\": \"منتج محدث\",\n    \"image\": null,\n    \"description\": \"وصف محدث للمنتج.\",\n    \"sku_code\": \"PRD-TEST-100\",\n    \"created_at\": \"2026-06-12T12:00:00.000000Z\",\n    \"updated_at\": \"2026-06-12T12:30:00.000000Z\",\n    \"category\": {\n      \"id\": 1,\n      \"name\": \"الكترونيات\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Product",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/products/10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "products",
+            "10"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Deleted Successfully",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "10"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_body": "{\n  \"success\": true,\n  \"message\": \"تم حذف المنتج بنجاح\",\n  \"data\": []\n}"
+        },
+        {
+          "name": "Unauthorized Error",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer INVALID_TOKEN"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/products/10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "products",
+                "10"
+              ]
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_body": "{\n  \"message\": \"Unauthenticated.\"\n}"
+        }
+      ]
+    }
+  ]
+}
