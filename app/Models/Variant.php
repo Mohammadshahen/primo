@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Offer;
 
 class Variant extends Model
 {
@@ -16,8 +17,35 @@ class Variant extends Model
         'is_active',
     ];
 
+    // protected $appends = [
+    //     'has_active_offer',
+    //     'offer_id',
+    // ];
+
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function offer()
+    {
+        return $this->hasOne(Offer::class, 'variant_id');
+    }
+
+    public function activeOffer()
+    {
+        return $this->hasOne(Offer::class, 'variant_id')
+            ->whereDate('from', '<=', now())
+            ->whereDate('to', '>=', now());
+    }
+
+    public function getHasActiveOfferAttribute(): bool
+    {
+        return (bool) $this->activeOffer;
+    }
+
+    public function getOfferIdAttribute(): ?int
+    {
+        return $this->activeOffer?->id;
     }
 }

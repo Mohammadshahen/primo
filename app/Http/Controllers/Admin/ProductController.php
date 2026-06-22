@@ -38,7 +38,8 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        return $this->success($product->load(['category:id,name', 'variants']), 'تم جلب بيانات المنتج بنجاح');
+        $data = $this->service->show($product);
+        return $this->success($data, 'تم جلب بيانات المنتج بنجاح');
     }
 
     public function update(UpdateProductRequest $request, Product $product)

@@ -17,6 +17,18 @@ class ProductService extends Service
             ->get();
     }
 
+    public function show(Product $product)
+    {
+        $product->load(['category:id,name', 'variants']);
+        $product->variants->each(function ($variant) {
+            $variant->has_active_offer = $variant->has_active_offer;
+            $variant->offer_id = $variant->offer_id;
+            $variant->makeHidden(['activeOffer']);
+        });
+
+        return $product;
+    }
+
     public function create(array $data): array
     {
         try {

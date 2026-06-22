@@ -31,4 +31,9 @@ class Service
 
         throw new HttpResponseException(response()->json($response, $code));
     }
+
+    public function ttimeNow()
+    {
+        return now()->addHours(3);
+    }
 }

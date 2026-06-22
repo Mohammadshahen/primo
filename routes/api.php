@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategorieController;
+use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->delete('/account/delete', [UserManagementCont
 
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('categories', CategorieController::class);
+    Route::apiResource('offers', OfferController::class);
 
     Route::apiResource('products', ProductController::class);
     Route::delete('variants/{variant}/delete', [ProductController::class, 'deleteVariant'])->name('products.variants.destroy');
