@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagementRequests\ChangePasswordUserRequest;
+use App\Http\Requests\UserManagementRequests\UpdateNotificationSettingsRequest;
 use App\Http\Requests\UserManagementRequests\UpdateProfileUserRequest;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -43,5 +44,29 @@ class UserController extends Controller
         }
 
         return $this->success([], $result['message']);
+    }
+
+    public function getNotificationSettingsUser(): JsonResponse
+    {
+        $user = Auth::user();
+        $result = $this->service->getNotificationSettings($user);
+
+        if (! empty($result['error'])) {
+            return $this->error($result['message'], 500);
+        }
+
+        return $this->success($result, 'تم جلب إعدادات الإشعارات بنجاح');
+    }
+
+    public function updateNotificationSettingsUser(UpdateNotificationSettingsRequest $request): JsonResponse
+    {
+        $user = Auth::user();
+        $result = $this->service->updateNotificationSettings($user, $request->validated());
+
+        if (! empty($result['error'])) {
+            return $this->error($result['message'], 500);
+        }
+
+        return $this->success($result['data'] ?? [], $result['message']);
     }
 }

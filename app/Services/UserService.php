@@ -72,4 +72,44 @@ class UserService extends Service
             ];
         }
     }
+
+    public function getNotificationSettings(User $user): array
+    {
+        try {
+            return [
+                'notification_offer' => (bool) $user->notification_offer,
+                'notification_order' => (bool) $user->notification_order,
+            ];
+        } catch (\Throwable $e) {
+            $this->logException($e, __METHOD__ . ' getNotificationSettings');
+
+            return [
+                'error' => true,
+                'message' => 'حدث خطأ أثناء جلب إعدادات الإشعارات. يرجى المحاولة مرة أخرى.',
+            ];
+        }
+    }
+
+    public function updateNotificationSettings(User $user, array $data): array
+    {
+        try {
+            $user->update([
+                'notification_offer' => $data['notification_offer'] ?? $user->notification_offer,
+                'notification_order' => $data['notification_order'] ?? $user->notification_order,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'تم تحديث إعدادات الإشعارات بنجاح',
+                'data' => $this->getNotificationSettings($user->fresh()),
+            ];
+        } catch (\Throwable $e) {
+            $this->logException($e, __METHOD__ . ' updateNotificationSettings');
+
+            return [
+                'error' => true,
+                'message' => 'حدث خطأ أثناء تحديث إعدادات الإشعارات. يرجى المحاولة مرة أخرى.',
+            ];
+        }
+    }
 }

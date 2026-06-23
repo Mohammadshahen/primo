@@ -49,6 +49,8 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::get('profile', [UserController::class, 'getProfileUser'])->name('user.profile.show');
     Route::patch('profile', [UserController::class, 'updateProfileUser'])->name('user.profile.update');
     Route::post('change-password', [UserController::class, 'changePasswordUser'])->name('user.profile.change-password');
+    Route::get('notifications', [UserController::class, 'getNotificationSettingsUser'])->name('user.notifications.show');
+    Route::patch('notifications', [UserController::class, 'updateNotificationSettingsUser'])->name('user.notifications.update');
 
     Route::apiResource('addresses', AddressController::class);
 });
