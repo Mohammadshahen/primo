@@ -60,6 +60,11 @@ class User extends Authenticatable
         return $this->morphMany(Device::class, 'owner');
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
     /**
      * Register or update FCM token for a device.
      * Users support multiple devices.

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OfferController;
@@ -44,8 +45,10 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::get('categories', [CategorieController::class, 'userGitAllGategories'])->name('user.categories.index');
     Route::get('home', [HomeController::class, 'userHome'])->name('user.home');
 
-    
+
     Route::get('profile', [UserController::class, 'getProfileUser'])->name('user.profile.show');
     Route::patch('profile', [UserController::class, 'updateProfileUser'])->name('user.profile.update');
     Route::post('change-password', [UserController::class, 'changePasswordUser'])->name('user.profile.change-password');
+
+    Route::apiResource('addresses', AddressController::class);
 });

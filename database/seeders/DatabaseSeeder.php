@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             ProductsTableSeeder::class,
             VariantsTableSeeder::class,
             OffersTableSeeder::class,
+            AddressesTableSeeder::class,
         ]);
     }
 }
