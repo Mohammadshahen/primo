@@ -21,6 +21,12 @@ class Offer extends Model
         'to' => 'date',
     ];
 
+    public function scopeActive($query)
+    {
+        return $query->whereDate('from', '<=', now())
+            ->whereDate('to', '>=', now());
+    }
+
     public function variant()
     {
         return $this->belongsTo(Variant::class, 'variant_id');

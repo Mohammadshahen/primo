@@ -12,6 +12,11 @@ class CategorieService extends Service
         return Categorie::select('id', 'name', 'image')->get();
     }
 
+    public function listForUser()
+    {
+        return $this->list();
+    }
+
     public function create(array $data): array
     {
         try {

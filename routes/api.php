@@ -1,8 +1,10 @@
 <?php
 
-use App\Http\Controllers\Admin\CategorieController;
-use App\Http\Controllers\Admin\OfferController;
-use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\CategorieController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\OfferController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +37,10 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('products', ProductController::class);
     Route::delete('variants/{variant}/delete', [ProductController::class, 'deleteVariant'])->name('products.variants.destroy');
     Route::post('products/toggle-active/{product}', [ProductController::class, 'toggleStatus'])->name('products.toggle-active');
+});
+
+
+Route::prefix('user')->middleware('auth:sanctum')->group(function () {
+    Route::get('categories', [CategorieController::class, 'userGitAllGategories'])->name('user.categories.index');
+    Route::get('home', [HomeController::class, 'userHome'])->name('user.home');
 });
