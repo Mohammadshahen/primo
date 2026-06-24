@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UserManagementRequests\ChangePasswordUserRequest;
 use App\Http\Requests\UserManagementRequests\UpdateNotificationSettingsRequest;
 use App\Http\Requests\UserManagementRequests\UpdateProfileUserRequest;
+use App\Models\Product;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,31 @@ class UserController extends Controller
     {
         $user = Auth::user();
         $result = $this->service->updateNotificationSettings($user, $request->validated());
+
+        if (! empty($result['error'])) {
+            return $this->error($result['message'], 500);
+        }
+
+        return $this->success($result['data'] ?? [], $result['message']);
+    }
+
+    public function toggleFavoriteUser(Product $product): JsonResponse
+    {
+        $user = Auth::user();
+
+        $result = $this->service->toggleFavorite($user, $product);
+
+        if (! empty($result['error'])) {
+            return $this->error($result['message'], 500);
+        }
+
+        return $this->success($result['data'] ?? [], $result['message']);
+    }
+
+    public function getFavoriteProductsUser(): JsonResponse
+    {
+        $user = Auth::user();
+        $result = $this->service->getFavoriteProducts($user);
 
         if (! empty($result['error'])) {
             return $this->error($result['message'], 500);

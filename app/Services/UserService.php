@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Favorite;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\FileStorage;
 use Illuminate\Support\Facades\Hash;
@@ -109,6 +111,69 @@ class UserService extends Service
             return [
                 'error' => true,
                 'message' => 'حدث خطأ أثناء تحديث إعدادات الإشعارات. يرجى المحاولة مرة أخرى.',
+            ];
+        }
+    }
+
+    public function toggleFavorite(User $user, Product $product): array
+    {
+        try {
+            $favorite = Favorite::where('user_id', $user->id)
+                ->where('product_id', $product->id)
+                ->first();
+
+            if ($favorite) {
+                $favorite->delete();
+
+                return [
+                    'success' => true,
+                    'message' => 'تم حذف المنتج من المفضلة',
+                    'data' => [
+                        'favorited' => false,
+                    ],
+                ];
+            }
+
+            Favorite::create([
+                'user_id' => $user->id,
+                'product_id' => $product->id,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'تم إضافة المنتج إلى المفضلة',
+                'data' => [
+                    'favorited' => true,
+                ],
+            ];
+        } catch (\Throwable $e) {
+            $this->logException($e, __METHOD__ . ' toggleFavorite');
+
+            return [
+                'error' => true,
+                'message' => 'حدث خطأ أثناء تعديل المفضلة. يرجى المحاولة مرة أخرى.',
+            ];
+        }
+    }
+
+    public function getFavoriteProducts(User $user): array
+    {
+        try {
+            $products = Product::active()->
+            whereHas('favorites', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->get();
+            return [
+                'success' => true,
+                'message' => 'تم جلب المنتجات المفضلة بنجاح',
+                'data' => $products,
+            ];
+        } catch (\Throwable $e) {
+            $this->logException($e, __METHOD__ . ' getFavoriteProducts');
+
+            return [
+                'error' => true,
+                'message' => 'حدث خطأ أثناء جلب المنتجات المفضلة. يرجى المحاولة مرة أخرى.',
             ];
         }
     }

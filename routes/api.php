@@ -51,6 +51,8 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::post('change-password', [UserController::class, 'changePasswordUser'])->name('user.profile.change-password');
     Route::get('notifications', [UserController::class, 'getNotificationSettingsUser'])->name('user.notifications.show');
     Route::patch('notifications', [UserController::class, 'updateNotificationSettingsUser'])->name('user.notifications.update');
+    Route::post('favorites/toggle/{product}', [UserController::class, 'toggleFavoriteUser'])->name('user.favorites.toggle');
+    Route::get('favorites', [UserController::class, 'getFavoriteProductsUser'])->name('user.favorites.index');
 
     Route::apiResource('addresses', AddressController::class);
 });
