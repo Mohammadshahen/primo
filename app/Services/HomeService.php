@@ -37,16 +37,36 @@ class HomeService extends Service
 
     private function getActiveProducts(?string $search)
     {
-        return Product::select('id', 'category_id', 'name', 'image', 'description', 'sku_code')
+        $products =  Product::select('id', 'category_id', 'name', 'image')
             ->with(['variants' => function ($query) {
+                //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
                 $query->select('id', 'product_id', 'price')
-                ->where('is_active' , true);
+                ->where('is_active' , true)
+                ->orderBy('price', 'asc')
+                ->limit(1);
+            }, 'category' => function ($query) {
+                $query->select('id', 'name');
             }])
             ->where('is_active', true)
+            // بدي البحث على اسم المنتج او اسم القسم
             ->when($search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%");
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                        $categoryQuery->where('name', 'like', "%{$search}%");
+                    });
             })
             ->get();
+            return $products->filter(function ($product) {
+                return $product->variants->isNotEmpty();
+            })->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'category_name' => $product->category->name,
+                    'name' => $product->name,
+                    'image' => $product->image,
+                    'price' => $product->variants->first()->price ?? null,
+                ];
+            })->values();
     }
 
     private function getActiveOffers(?string $search)

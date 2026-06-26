@@ -44,7 +44,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::get('categories', [CategorieController::class, 'userGitAllGategories'])->name('user.categories.index');
     Route::get('home', [HomeController::class, 'userHome'])->name('user.home');
-
+    Route::get('products/{product}', [ProductController::class, 'getProductById'])->name('user.products.show');
 
     Route::get('profile', [UserController::class, 'getProfileUser'])->name('user.profile.show');
     Route::patch('profile', [UserController::class, 'updateProfileUser'])->name('user.profile.update');

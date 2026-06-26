@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\Variant;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ProductService extends Service
@@ -27,6 +28,46 @@ class ProductService extends Service
         });
 
         return $product;
+    }
+
+    public function getProductById(Product $product): array
+    {
+        try {
+            $product->load(['category:id,name', 'variants','variants.activeOffer']);
+            $data = [
+                'id' => $product->id,
+                'category_name' => $product->category->name,
+                'name' => $product->name,
+                'image' => $product->image,
+                'description' => $product->description,
+                'sku_code' => $product->sku_code,
+                'variants' => $product->variants->map(function ($variant) {
+                    return [
+                        'id' => $variant->id,
+                        'price' => $variant->price,
+                        'stock' => $variant->stock,
+                        'property' => $variant->property,
+                        'is_active' => $variant->is_active,
+                        'has_active_offer' => $variant->has_active_offer,
+                        'discount_amount' => $variant->has_active_offer ? $variant->activeOffer->discount_value : 0,
+                        'new_price' => $variant->price - ($variant->has_active_offer ? $variant->activeOffer->discount_value : 0),
+                    ];
+                }),
+            ];
+
+            return [
+                'success' => true,
+                'data' => $data,
+            ];
+        } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' getProductById');
+
+            return [
+                'success' => false,
+                'message' => 'فشل جلب المنتج',
+                'status' => 500,
+            ];
+        }
     }
 
     public function create(array $data): array
