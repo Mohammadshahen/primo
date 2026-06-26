@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OfferController;
@@ -53,6 +54,11 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::patch('notifications', [UserController::class, 'updateNotificationSettingsUser'])->name('user.notifications.update');
     Route::post('favorites/toggle/{product}', [UserController::class, 'toggleFavoriteUser'])->name('user.favorites.toggle');
     Route::get('favorites', [UserController::class, 'getFavoriteProductsUser'])->name('user.favorites.index');
+
+    Route::get('cart', [CartController::class, 'index'])->name('user.cart.index');
+    Route::post('cart', [CartController::class, 'store'])->name('user.cart.store');
+    Route::patch('cart/{cart}', [CartController::class, 'update'])->name('user.cart.update');
+    Route::delete('cart/{cart}', [CartController::class, 'destroy'])->name('user.cart.destroy');
 
     Route::apiResource('addresses', AddressController::class);
 });
