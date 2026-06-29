@@ -87,6 +87,10 @@ class UserManagementService extends Service
             }
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to register user', [
+                'phone' => $data['phone'],
+                'error' => $e->getMessage()
+            ]);
             return [
                 'success' => false,
                 'message' => 'فشل في إنشاء الحساب',
