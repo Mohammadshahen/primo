@@ -76,6 +76,10 @@ class UserManagementService extends Service
                 ];
             } catch (\Exception $e) {
                 DB::rollBack();
+                log::error('Failed to send OTP during registration', [
+                    'phone' => $data['phone'],
+                    'error' => $e->getMessage()
+                ]);
                 return [
                     'success' => false,
                     'message' => 'فشل في إرسال كود التحقق',
