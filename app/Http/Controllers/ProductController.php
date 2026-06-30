@@ -44,18 +44,14 @@ class ProductController extends Controller
 
     public function getProductById(Product $product)
     {
-        try {
-            
-            $result = $this->service->getProductById($product);
 
-            if (! $result['success']) {
-                return $this->error($result['message'] ?? 'فشل جلب المنتج', $result['status'] ?? 400);
-            }
+        $result = $this->service->getProductById($product);
 
-            return $this->success($result['data'], 'تم جلب بيانات المنتج بنجاح');
-        } catch (\Throwable $e) {
-            return $this->error('فشل جلب المنتج', 500);
+        if (! $result['success']) {
+            return $this->error($result['message'] ?? 'فشل جلب المنتج', $result['status'] ?? 400);
         }
+
+        return $this->success($result['data'], 'تم جلب بيانات المنتج بنجاح');
     }
 
     public function update(UpdateProductRequest $request, Product $product)

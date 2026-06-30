@@ -75,4 +75,15 @@ class AddressController extends Controller
 
         return $this->success([], $result['message']);
     }
+
+    public function saveAdminAddress(UpdateAddressRequest $request): JsonResponse
+    {
+        $result = $this->service->saveAdminAddress( $request->validated());
+
+        if (! $result['success']) {
+            return $this->error($result['message'], 400);
+        }
+
+        return $this->success($result['data'], $result['message']);
+    }
 }

@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Address;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -23,6 +25,19 @@ class DatabaseSeeder extends Seeder
             'phone_verified_at' => now(),
             'password' => bcrypt('12345678'),
             'is_admin' => true,
+        ]);
+
+        Address::create([
+        'name'=> 'store_address',
+        'user_id' => 1,
+        'location_lat' => 33.5138,
+        'location_lng' => 36.2765,
+        'description' => 'nane',
+        ]);
+
+        Setting::create([
+            'key' => 'delivery_price',
+            'value' => 100.0,
         ]);
 
         $this->call([

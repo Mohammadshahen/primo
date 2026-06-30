@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Address;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AddressService extends Service
@@ -94,6 +95,38 @@ class AddressService extends Service
             return [
                 'success' => false,
                 'message' => 'فشل في حذف العنوان',
+            ];
+        }
+    }
+
+    public function saveAdminAddress(array $data): array
+    {
+        try {
+            DB::beginTransaction();
+
+            $address = Address::updateOrCreate(
+                ['user_id' => 1], // Assuming admin addresses have no associated user
+                [
+                    'name' => 'store_address',
+                    'description' => $data['description'] ?? null,
+                    'location_lat' => $data['location_lat'] ,
+                    'location_lng' => $data['location_lng'],
+                ]
+            );
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'data' => $address,
+                'message' => 'تم حفظ عنوان الإدارة بنجاح',
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->logException($e, 'save admin address');
+            return [
+                'success' => false,
+                'message' => 'فشل في حفظ عنوان الإدارة',
             ];
         }
     }
