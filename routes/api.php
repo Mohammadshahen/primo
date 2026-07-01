@@ -65,5 +65,9 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::delete('cart/{cart}', [CartController::class, 'destroy'])->name('user.cart.destroy');
 
     Route::post('ordar/price', [OrdarController::class, 'OrdarPrice'])->name('user.ordars.price');
+    Route::post('ordar/confirme', [OrdarController::class, 'confirmeOrdar'])->name('user.ordars.confirme');
+
+
+
     Route::apiResource('addresses', AddressController::class);
 });

@@ -16,4 +16,10 @@ class OrdarController extends Controller
         $result = $this->service->calculatePrice($request->validated());
         return $this->success($result, $result['message'] ?? 'تم حساب سعر الطلب بنجاح');
     }
+
+    public function confirmeOrdar(OrdarPriceRequest $request): JsonResponse
+    {
+        $result = $this->service->confirmeOrdar($request->validated());
+        return $this->success($result, 'تم تأكيد الطلب بنجاح ');
+    }
 }
