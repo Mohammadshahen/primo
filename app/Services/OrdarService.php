@@ -79,6 +79,7 @@ class OrdarService extends Service
             $ordar = Ordar::create([
                 'user_id' => $user_id,
                 'address_id' => $data['address_id'] ?? null,
+                'is_delivere' => $data['is_delivery'] ?? false,
                 'amount' => $orderPrice['item_price'],
                 'delivere_amount' => $orderPrice['delivery_price'],
                 'total_amount' => $orderPrice['total_price'],
