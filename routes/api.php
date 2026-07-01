@@ -5,6 +5,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OfferController;
+use App\Http\Controllers\OrdarController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
@@ -63,5 +64,6 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::patch('cart/{cart}', [CartController::class, 'update'])->name('user.cart.update');
     Route::delete('cart/{cart}', [CartController::class, 'destroy'])->name('user.cart.destroy');
 
+    Route::post('ordar/price', [OrdarController::class, 'OrdarPrice'])->name('user.ordars.price');
     Route::apiResource('addresses', AddressController::class);
 });

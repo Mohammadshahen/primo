@@ -4,116 +4,50 @@ namespace App\Services;
 
 use App\Models\Address;
 use App\Models\Cart;
-use App\Models\DeliveryPrice;
-use App\Models\Ordar;
-use App\Models\OrdarItam;
-use App\Models\User;
-use Exception;
-use Illuminate\Support\Facades\DB;
+use App\Models\Setting;
+use App\Traits\DistanceTrait;
+use Illuminate\Support\Facades\Auth;
 
 class OrdarService extends Service
 {
-    public function confirmOrdar(User $user, array $data): array
+    use DistanceTrait;
+    public function calculatePrice(array $data)
     {
-        try {
-            $cartItems = Cart::where('user_id', $user->id)
-                ->with(['variant.product'])
-                ->get();
-
-            if ($cartItems->isEmpty()) {
-                return [
-                    'success' => false,
-                    'message' => 'السلة فارغة',
-                    'status' => 400,
-                ];
+        $user_id = Auth::id();
+        if ($data['is_delivery'] ?? false) {
+            $address = Address::where('id', $data['address_id'] ?? null)->first();
+            if ($user_id != $address?->user_id) {
+                $this->throwExceptionJson('العنوان المحدد لا ينتمي للمستخدم الحالي', 403);
             }
-
-            $isDelivere = (bool) ($data['is_delivere'] ?? false);
-            $addressId = $data['address_id'] ?? null;
-            $address = null;
-
-            if ($isDelivere) {
-                $address = Address::where('id', $addressId)
-                    ->where('user_id', $user->id)
-                    ->first();
-
-                if (! $address) {
-                    return [
-                        'success' => false,
-                        'message' => 'العنوان غير صالح للطلب',
-                        'status' => 400,
-                    ];
-                }
-            }
-
-            $amount = 0.0;
-
-            foreach ($cartItems as $cartItem) {
-                $variant = $cartItem->variant;
-                $product = $variant?->product;
-
-                if (! $variant || ! $product || ! $variant->is_active || ! $product->is_active) {
-                    return [
-                        'success' => false,
-                        'message' => 'يوجد عنصر في السلة غير متاح حالياً',
-                        'status' => 400,
-                    ];
-                }
-
-                if ($cartItem->count > $variant->stock) {
-                    return [
-                        'success' => false,
-                        'message' => 'الكمية المطلوبة غير متوفرة في المخزون',
-                        'status' => 400,
-                    ];
-                }
-
-                $amount += $variant->price * $cartItem->count;
-            }
-
-            $deliveryAmount = $isDelivere ? DeliveryPrice::getDefaultPrice() : 0.0;
-            $totalAmount = $amount + $deliveryAmount;
-
-            DB::beginTransaction();
-
-            $ordar = Ordar::create([
-                'user_id' => $user->id,
-                'address_id' => $address?->id,
-                'status' => 'pending',
-                'is_delivere' => $isDelivere,
-                'amount' => $amount,
-                'delivere_amount' => $deliveryAmount,
-                'total_amount' => $totalAmount,
-            ]);
-
-            $items = [];
-            foreach ($cartItems as $cartItem) {
-                $items[] = [
-                    'ordar_id' => $ordar->id,
-                    'variant_id' => $cartItem->variant_id,
-                    'count' => $cartItem->count,
-                ];
-            }
-
-            OrdarItam::insert($items);
-            Cart::where('user_id', $user->id)->delete();
-
-            DB::commit();
-
-            return [
-                'success' => true,
-                'message' => 'تم تأكيد الطلب بنجاح',
-                'data' => $ordar->load(['items.variant.product', 'address']),
-            ];
-        } catch (Exception $e) {
-            DB::rollBack();
-            $this->logException($e, __METHOD__ . ' confirmOrdar');
-
-            return [
-                'success' => false,
-                'message' => 'فشل تأكيد الطلب',
-                'status' => 500,
-            ];
         }
+        $items = Cart::with('variant.activeoffer')->where('user_id', $user_id)->get();
+        $result['item_price'] = 0;
+        foreach ($items as $item) {
+            $discount = $item->variant?->activeOffer->discount_value ?? 0;
+            $price_old = ($item->variant->price - $discount);
+            $price = $price_old * $item->count;
+            $result['item_price'] += $price;
+        }
+
+        $result['distance'] = 0;
+        $result['delivery_price'] = 0;
+        $result['delivery_fee_for_meter'] = Setting::getValue('delivery_price', 0);
+
+
+        if ($data['is_delivery'] ?? false) {
+            $result['distance'] = $this->calculateDistance($data['address_id'] ?? null);
+            $result['delivery_price'] = $result['distance'] * $result['delivery_fee_for_meter'];
+            $result['delivery_price'] = round($result['delivery_price']);
+        }
+
+        $result['total_price'] = $result['item_price'] + $result['delivery_price'];
+
+        return [
+            'item_price' => $result['item_price'],
+            // 'distance' => $result['distance'],
+            'delivery_price' => $result['delivery_price'],
+            // 'delivery_fee_for_meter' => $result['delivery_fee_for_meter'],
+            'total_price' => $result['total_price'],
+        ];
     }
 }
