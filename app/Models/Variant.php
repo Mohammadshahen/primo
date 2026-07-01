@@ -59,10 +59,8 @@ class Variant extends Model
         return $this->hasMany(Cart::class, 'variant_id');
     }
 
-    public function scopeIs_deliverable($query)
+    public function is_deliverable()
     {
-        return (bool) $query->where('is_active', true)->whereHas('product', function ($query) {
-            $query->where('is_active', true);
-        });
+        return (bool) $this->is_active && $this->product->is_active;
     }
 }

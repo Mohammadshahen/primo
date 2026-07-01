@@ -6,11 +6,12 @@ use App\Models\Address;
 use App\Models\Cart;
 use App\Models\Ordar;
 use App\Models\OrdarItam;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Traits\DistanceTrait;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class OrdarService extends Service
 {
@@ -71,7 +72,7 @@ class OrdarService extends Service
     {
         $orderPrice = $this->calculatePrice($data);
         $user_id = Auth::id();
-        $items = Cart::with(['variant.product','variant'])->where('user_id', $user_id)->get();
+        $items = Cart::with(['variant'])->where('user_id', $user_id)->get();
         // return $items;
         try {
             DB::beginTransaction();
@@ -83,11 +84,11 @@ class OrdarService extends Service
                 'total_amount' => $orderPrice['total_price'],
             ]);
             foreach ($items as $item) {
-                if( $item->variant->is_deliverable() == false){
-                    // return $item->variant->is_deliverable;
-                    $this->throwExceptionJson('المنتج ' . $item->variant->product->name . ' غير متاح للتوصيل', 400);
+                // return ['is'=>$item->variant->is_deliverable()];
+                if ($item->variant->is_deliverable() == false) {
+                    $this->throwExceptionJson('المنتج ' . $item->variant->product->name . ' غير متاح ', 400);
                 }
-                if( $item->variant->stock < $item->count){
+                if ($item->variant->stock < $item->count) {
                     $this->throwExceptionJson('الكمية المطلوبة من المنتج ' . $item->variant->product->name . ' غير متوفرة', 400);
                 }
                 OrdarItam::create([
@@ -97,10 +98,14 @@ class OrdarService extends Service
                 ]);
 
                 $item->variant->decrement('stock', $item->count);
-                $item->delete();
+                if ($item->variant->stock == 0) {
+                    $item->variant->update(['is_active' => false]);
+                }
+                $this->checkProductAvailability($item->variant->product_id);
             };
 
             DB::commit();
+
             return $ordar;
         } catch (HttpResponseException $e) {
             DB::rollBack();
@@ -109,6 +114,20 @@ class OrdarService extends Service
             DB::rollBack();
             $this->logException($e, __METHOD__ . ' - Error confirming order');
             $this->throwExceptionJson('حدث خطأ أثناء تأكيد الطلب', 500);
+        }
+    }
+
+
+
+    public function checkProductAvailability($product_id)
+    {
+
+        $product = Product::with(['variants' => function ($query) {
+            $query->where('is_active', true);
+        }])->find($product_id);
+
+        if ($product->variants->isEmpty()) {
+            $product->update(['is_active' => false]);
         }
     }
 }
