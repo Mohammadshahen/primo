@@ -59,7 +59,7 @@ class Variant extends Model
         return $this->hasMany(Cart::class, 'variant_id');
     }
 
-    public function is_deliverable()
+    public function is_available()
     {
         return (bool) $this->is_active && $this->product->is_active;
     }

@@ -85,7 +85,7 @@ class OrdarService extends Service
             ]);
             foreach ($items as $item) {
                 // return ['is'=>$item->variant->is_deliverable()];
-                if ($item->variant->is_deliverable() == false) {
+                if ($item->variant->is_available() == false) {
                     $this->throwExceptionJson('المنتج ' . $item->variant->product->name . ' غير متاح ', 400);
                 }
                 if ($item->variant->stock < $item->count) {
