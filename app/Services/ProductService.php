@@ -33,7 +33,7 @@ class ProductService extends Service
     public function getProductById(Product $product): array
     {
         try {
-            $product->load(['category:id,name', 'variants','variants.activeOffer']);
+            $product->load(['category:id,name', 'variants','variants.activeOffer','ratings']);
             $data = [
                 'id' => $product->id,
                 'category_name' => $product->category->name,
@@ -41,6 +41,8 @@ class ProductService extends Service
                 'image' => $product->image,
                 'description' => $product->description,
                 'sku_code' => $product->sku_code,
+                'ratings' => $product->ratings->avg('rating'),
+                'ratings_count' => $product->ratings->count(),
                 'variants' => $product->variants->map(function ($variant) {
                     return [
                         'id' => $variant->id,
