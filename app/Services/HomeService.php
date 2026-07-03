@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Categorie;
 use App\Models\Offer;
+use App\Models\Ordar;
 use App\Models\Product;
+use App\Models\Suggestion;
 
 class HomeService extends Service
 {
@@ -106,5 +108,62 @@ class HomeService extends Service
                 'variant_stock' => $offer->variant->stock,
             ];
         })->values();
+    }
+
+    public function adminHome(): array
+    {
+        try {
+            return [
+                'total_amount' => (float) Ordar::where('status', 'completed')->sum('total_amount'),
+                'pending_orders_count' => Ordar::query()->where('status', 'pending')->count(),
+                'products_count' => Product::query()->count(),
+                'pending_orders' => $this->getPendingOrders(),
+                'pending_suggestions' => $this->getPendingSuggestions(),
+            ];
+        } catch (\Throwable $exception) {
+            $this->logException($exception, 'admin home dashboard');
+            $this->throwExceptionJson('فشل في جلب بيانات لوحة تحكم المشرف');
+        }
+    }
+
+    private function getPendingOrders()
+    {
+        return Ordar::query()
+            ->with(['user'])
+            ->where('status', 'pending')
+            ->orderByDesc('created_at')
+            ->get();
+            // ->map(function (Ordar $ordar) {
+            //     return [
+            //         'id' => $ordar->id,
+            //         'user_name' => $ordar->user?->name,
+            //         'address' => $ordar->address?->name,
+            //         'status' => $ordar->status,
+            //         'amount' => (float) $ordar->amount,
+            //         'delivery_amount' => (float) $ordar->delivere_amount,
+            //         'total_amount' => (float) $ordar->total_amount,
+            //         'created_at' => $ordar->created_at->toDateTimeString(),
+            //     ];
+            // });
+    }
+
+    private function getPendingSuggestions()
+    {
+        return Suggestion::query()
+            ->select('id', 'name', 'description', 'user_id', 'status', 'created_at')
+            ->with(['user'])
+            ->where('status', 'pending')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (Suggestion $suggestion) {
+                return [
+                    'id' => $suggestion->id,
+                    'name' => $suggestion->name,
+                    'description' => $suggestion->description,
+                    'status' => $suggestion->status,
+                    'created_at' => $suggestion->created_at->toDateTimeString(),
+                    'user' => $suggestion->user,
+                ];
+            });
     }
 }

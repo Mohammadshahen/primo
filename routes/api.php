@@ -52,8 +52,12 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::post('products/toggle-active/{product}', [ProductController::class, 'toggleStatus'])->name('products.toggle-active');
     Route::post('address', [AddressController::class, 'saveAdminAddress'])->name('admin.store-address.save');
 
+
     // Admin routes for suggestions
     Route::post('suggestions/{suggestion}/status', [SuggestionController::class, 'changeStatus'])->name('admin.suggestions.status.change');
+
+
+    Route::get('home', [HomeController::class, 'adminHome'])->name('admin.home');
 });
 
 
