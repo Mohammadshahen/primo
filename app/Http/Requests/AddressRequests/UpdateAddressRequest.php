@@ -10,7 +10,7 @@ class UpdateAddressRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check();
+        return true;
     }
 
     public function rules(): array
@@ -31,13 +31,5 @@ class UpdateAddressRequest extends FormRequest
             'location_lat' => 'خط العرض',
             'location_lng' => 'خط الطول',
         ];
-    }
-
-    protected function failedAuthorization()
-    {
-        throw new HttpResponseException(response()->json([
-            'status' => 'error',
-            'message' => 'غير مصرح لك بالقيام بهذا الإجراء.'
-        ], 403));
     }
 }

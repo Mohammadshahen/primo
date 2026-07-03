@@ -74,6 +74,8 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::post('favorites/toggle/{product}', [UserController::class, 'toggleFavoriteUser'])->name('user.favorites.toggle');
     Route::get('favorites', [UserController::class, 'getFavoriteProductsUser'])->name('user.favorites.index');
 
+    Route::post('products/{product}/rate/ordar/{ordar}', [UserController::class, 'rateProduct'])->name('user.products.rate');
+
     Route::get('cart', [CartController::class, 'index'])->name('user.cart.index');
     Route::post('cart', [CartController::class, 'store'])->name('user.cart.store');
     Route::patch('cart/{cart}', [CartController::class, 'update'])->name('user.cart.update');

@@ -10,6 +10,8 @@ use App\Models\Product;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\UserManagementRequests\RateProductRequest;
+use App\Models\Ordar;
 
 class UserController extends Controller
 {
@@ -88,6 +90,19 @@ class UserController extends Controller
     {
         $user = Auth::user();
         $result = $this->service->getFavoriteProducts($user);
+
+        if (! empty($result['error'])) {
+            return $this->error($result['message'], 500);
+        }
+
+        return $this->success($result['data'] ?? [], $result['message']);
+    }
+
+    public function rateProduct(Product $product, Ordar $ordar, RateProductRequest $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        $result = $this->service->rateProduct($user, $product,$ordar, $request->validated());
 
         if (! empty($result['error'])) {
             return $this->error($result['message'], 500);

@@ -35,6 +35,11 @@ class Product extends Model
         return $this->hasMany(Favorite::class, 'product_id');
     }
 
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class, 'product_id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

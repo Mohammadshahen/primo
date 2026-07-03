@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Favorite;
+use App\Models\Ordar;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Rating;
 use App\Services\FileStorage;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -40,10 +42,7 @@ class UserService extends Service
             return $this->getProfileData($user->fresh());
         } catch (\Exception $e) {
             $this->logException($e, __METHOD__ . ' update');
-            return [
-                'error' => true,
-                'message' => 'حدث خطأ أثناء تحديث الملف الشخصي. يرجى المحاولة مرة أخرى.',
-            ];
+            $this->throwExceptionJson('حدث خطأ أثناء تحديث الملف الشخصي. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 
@@ -68,10 +67,7 @@ class UserService extends Service
             ];
         } catch (\Exception $e) {
             $this->logException($e, __METHOD__ . ' changePassword');
-            return [
-                'success' => false,
-                'message' => 'حدث خطأ أثناء تغيير كلمة المرور. يرجى المحاولة مرة أخرى.',
-            ];
+            $this->throwExceptionJson('حدث خطأ أثناء تغيير كلمة المرور. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 
@@ -85,10 +81,7 @@ class UserService extends Service
         } catch (\Throwable $e) {
             $this->logException($e, __METHOD__ . ' getNotificationSettings');
 
-            return [
-                'error' => true,
-                'message' => 'حدث خطأ أثناء جلب إعدادات الإشعارات. يرجى المحاولة مرة أخرى.',
-            ];
+            $this->throwExceptionJson('حدث خطأ أثناء جلب إعدادات الإشعارات. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 
@@ -108,10 +101,7 @@ class UserService extends Service
         } catch (\Throwable $e) {
             $this->logException($e, __METHOD__ . ' updateNotificationSettings');
 
-            return [
-                'error' => true,
-                'message' => 'حدث خطأ أثناء تحديث إعدادات الإشعارات. يرجى المحاولة مرة أخرى.',
-            ];
+            $this->throwExceptionJson('حدث خطأ أثناء تحديث إعدادات الإشعارات. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 
@@ -149,10 +139,7 @@ class UserService extends Service
         } catch (\Throwable $e) {
             $this->logException($e, __METHOD__ . ' toggleFavorite');
 
-            return [
-                'error' => true,
-                'message' => 'حدث خطأ أثناء تعديل المفضلة. يرجى المحاولة مرة أخرى.',
-            ];
+           $this->throwExceptionJson('حدث خطأ أثناء تحديث المفضلة. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 
@@ -171,10 +158,36 @@ class UserService extends Service
         } catch (\Throwable $e) {
             $this->logException($e, __METHOD__ . ' getFavoriteProducts');
 
+            $this->throwExceptionJson('حدث خطأ أثناء جلب المنتجات المفضلة .', 500);
+        }
+    }
+
+    public function rateProduct(User $user, Product $product, Ordar $ordar, array $data): array
+    {
+        $ordar->load('items.variant.product');
+        $product_ids = $ordar->items->pluck('variant.product.id')->toArray();
+        if($ordar->user_id !== $user->id || !in_array($product->id, $product_ids) || $ordar->status !== 'completed') {
+            $this->throwExceptionJson('لا يمكنك تقييم هذا المنتج.', 403);
+        }
+        try {
+            $ratingValue = (int) ($data['rating'] ?? 0);
+
+            $rating = Rating::updateOrCreate([
+                'user_id' => $user->id,
+                'product_id' => $product->id,
+            ], [
+                'rating' => $ratingValue,
+            ]);
+
             return [
-                'error' => true,
-                'message' => 'حدث خطأ أثناء جلب المنتجات المفضلة. يرجى المحاولة مرة أخرى.',
+                'success' => true,
+                'message' => 'تم حفظ تقييم المنتج بنجاح',
+                'data' => $rating,
             ];
+        } catch (\Throwable $e) {
+            $this->logException($e, __METHOD__ . ' rateProduct');
+
+            $this->throwExceptionJson('حدث خطأ أثناء حفظ تقييم المنتج. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 }

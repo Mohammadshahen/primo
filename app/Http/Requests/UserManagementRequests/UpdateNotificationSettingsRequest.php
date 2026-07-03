@@ -10,7 +10,7 @@ class UpdateNotificationSettingsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check();
+        return true;
     }
 
     public function rules(): array
@@ -34,13 +34,5 @@ class UpdateNotificationSettingsRequest extends FormRequest
         return [
             'boolean' => 'حقل :attribute يجب أن يكون صحيحاً أو خاطئاً.',
         ];
-    }
-
-    protected function failedAuthorization()
-    {
-        throw new HttpResponseException(response()->json([
-            'status' => 'error',
-            'message' => 'غير مصرح لك بالقيام بهذا الإجراء.'
-        ], 403));
     }
 }

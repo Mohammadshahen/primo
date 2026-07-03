@@ -4,6 +4,7 @@ namespace App\Http\Requests\suggestionRequests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ChangeSuggestionStatusRequest extends FormRequest
 {

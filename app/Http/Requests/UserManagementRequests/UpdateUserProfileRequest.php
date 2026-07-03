@@ -14,7 +14,7 @@ class UpdateUserProfileRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Auth::check();
+        return true;
     }
 
     /**
@@ -83,12 +83,5 @@ class UpdateUserProfileRequest extends FormRequest
             'avatar.max' => 'حجم :attribute يجب ألا يتجاوز :max كيلوبايت (ما يعادل 5 ميجابايت).',
             'avatar.mimetypes' => 'نوع ملف الصورة غير مسموح به. الأنواع المسموحة: :values.',
         ];
-    }
-    protected function failedAuthorization()
-    {
-        throw new HttpResponseException(response()->json([
-            'status' => 'error',
-            'message' => 'غير مصرح لك بالقيام بهذا الإجراء.'
-        ], 403));
     }
 }

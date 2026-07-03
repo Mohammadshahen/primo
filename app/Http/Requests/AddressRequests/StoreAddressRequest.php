@@ -10,7 +10,7 @@ class StoreAddressRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check();
+        return true;
     }
 
     public function rules(): array
@@ -33,11 +33,4 @@ class StoreAddressRequest extends FormRequest
         ];
     }
 
-    protected function failedAuthorization()
-    {
-        throw new HttpResponseException(response()->json([
-            'status' => 'error',
-            'message' => 'غير مصرح لك بالقيام بهذا الإجراء.'
-        ], 403));
-    }
 }

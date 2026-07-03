@@ -39,12 +39,4 @@ class ChangePasswordUserRequest extends FormRequest
             'confirmed' => 'تأكيد :attribute غير متطابق.',
         ];
     }
-
-    protected function failedAuthorization()
-    {
-        throw new HttpResponseException(response()->json([
-            'status' => 'error',
-            'message' => 'غير مصرح لك بالقيام بهذا الإجراء.'
-        ], 403));
-    }
 }
