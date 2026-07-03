@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('address_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('status')->default('pending');
+            $table->string('status')->default('pending');// pending, processing, completed, canceled
             $table->boolean('is_delivere')->default(false);
             $table->decimal('amount', 10, 2)->default(0);
             $table->decimal('delivere_amount', 10, 2)->default(0);

@@ -118,8 +118,7 @@ class OrdarService extends Service
         }
     }
 
-
-
+    
     public function checkProductAvailability($product_id)
     {
 
@@ -129,6 +128,71 @@ class OrdarService extends Service
 
         if ($product->variants->isEmpty()) {
             $product->update(['is_active' => false]);
+        }
+    }
+    
+
+
+
+    public function getAllOrdars(array $filters)
+    {
+        try {
+            $query = Ordar::with(['user:id,name,phone,avatar']);
+    
+            if (! empty($filters['status'])) {
+                $query->where('status', $filters['status']);
+            }
+    
+            return $query->orderByDesc('created_at')->get();
+        } catch (\Exception $e) {
+            $this->logException($e, __METHOD__ . ' - Error fetching orders');
+            $this->throwExceptionJson('حدث خطأ أثناء جلب الطلبات', 500);
+        }
+    }
+    
+    public function getSingleOrdar(Ordar $ordar)
+    {
+        try {
+            $ordar = $ordar->load([
+                'user:id,name,phone,avatar,avatar',
+                'address',
+                'items.variant.product',
+            ]);
+
+             $ordar->items->transform(function($item){
+                $variant= $item->variant;
+                $product = $item->variant->product;
+                return [
+                    'name' => $product->name,
+                    'image' => $product->image,
+                    'quantity' => $item->count,
+                    'property' => $variant->property,
+                    'price' => $variant->price,
+                    'has_active_offer' => $variant->has_active_offer,
+                    'new_price' => $variant->has_active_offer ? $variant->price - $variant->offer->discount_value : null,
+
+                    ];
+
+            });
+
+            return $ordar;
+
+             
+        } catch (\Exception $e) {
+            $this->logException($e, __METHOD__ . ' - Error fetching order details');
+            $this->throwExceptionJson('حدث خطأ أثناء جلب تفاصيل الطلب', 500);
+        }
+    }
+
+
+    public function changeOrdarStatus(array $data,Ordar $ordar)
+    {
+        try {
+            $ordar->update(['status' => $data['status']]);
+            return $ordar;
+        } catch (\Exception $e) {
+            $this->logException($e, __METHOD__ . ' - Error changing order status');
+            $this->throwExceptionJson('حدث خطأ أثناء تغيير حالة الطلب', 500);
         }
     }
 }

@@ -38,6 +38,13 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('offers', OfferController::class);
 
     Route::apiResource('products', ProductController::class);
+
+
+    Route::get('ordars', [OrdarController::class, 'getAllOrdar'])->name('admin.ordars.index');
+    Route::get('ordars/{ordar}', [OrdarController::class, 'getSingleOrdar'])->name('admin.ordars.show');
+    Route::post('ordars/status/{ordar}', [OrdarController::class, 'changeOrdarStatus'])->name('admin.ordars.status.change');
+
+
     Route::get('settings/delivery-price', [SettingController::class, 'getDeliveryPrice'])->name('admin.settings.delivery-price.show');
     Route::patch('settings/delivery-price', [SettingController::class, 'updateDeliveryPrice'])->name('admin.settings.delivery-price.update');
     Route::delete('variants/{variant}/delete', [ProductController::class, 'deleteVariant'])->name('products.variants.destroy');

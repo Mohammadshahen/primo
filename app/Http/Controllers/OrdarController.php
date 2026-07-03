@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\OrdarRequests\AdminOrdarFilterRequest;
 use App\Http\Requests\OrdarRequests\OrdarPriceRequest;
+use App\Models\Ordar;
 use App\Services\OrdarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +12,24 @@ use Illuminate\Support\Facades\Auth;
 class OrdarController extends Controller
 {
     public function __construct(protected OrdarService $service) {}
+
+    public function getAllOrdar(AdminOrdarFilterRequest $request): JsonResponse
+    {
+        $ordars = $this->service->getAllOrdars($request->validated());
+        return $this->success($ordars, 'تم جلب الطلبات بنجاح');
+    }
+
+    public function getSingleOrdar(Ordar $ordar): JsonResponse
+    {
+        $ordar = $this->service->getSingleOrdar($ordar);
+        return $this->success($ordar, 'تم جلب الطلب بنجاح');
+    }
+
+    public function changeOrdarStatus(AdminOrdarFilterRequest $request,Ordar $ordar): JsonResponse
+    {
+        $ordar = $this->service->changeOrdarStatus($request->validated(),$ordar);
+        return $this->success($ordar, 'تم تغيير حالة الطلب بنجاح');
+    }
 
     public function OrdarPrice(OrdarPriceRequest $request): JsonResponse
     {
