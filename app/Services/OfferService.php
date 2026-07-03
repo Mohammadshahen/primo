@@ -65,10 +65,7 @@ class OfferService extends Service
             DB::rollBack();
             $this->logException($e, __METHOD__ . ' create');
 
-            return [
-                'success' => false,
-                'message' => 'فشل إنشاء العرض',
-            ];
+            $this->throwExceptionJson('فشل إنشاء العرض', 500);
         }
     }
 
@@ -114,10 +111,7 @@ class OfferService extends Service
             DB::rollBack();
             $this->logException($e, __METHOD__ . ' update');
 
-            return [
-                'success' => false,
-                'message' => 'فشل تحديث العرض',
-            ];
+            $this->throwExceptionJson('فشل تحديث العرض', 500);
         }
     }
 
@@ -133,10 +127,7 @@ class OfferService extends Service
         } catch (Exception $e) {
             $this->logException($e, __METHOD__ . ' delete');
 
-            return [
-                'success' => false,
-                'message' => 'فشل حذف العرض',
-            ];
+            $this->throwExceptionJson('فشل حذف العرض', 500);
         }
     }
 }

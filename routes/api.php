@@ -10,6 +10,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\SuggestionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [UserManagementController::class, 'register']);
@@ -50,6 +51,9 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::delete('variants/{variant}/delete', [ProductController::class, 'deleteVariant'])->name('products.variants.destroy');
     Route::post('products/toggle-active/{product}', [ProductController::class, 'toggleStatus'])->name('products.toggle-active');
     Route::post('address', [AddressController::class, 'saveAdminAddress'])->name('admin.store-address.save');
+
+    // Admin routes for suggestions
+    Route::post('suggestions/{suggestion}/status', [SuggestionController::class, 'changeStatus'])->name('admin.suggestions.status.change');
 });
 
 
@@ -77,4 +81,6 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
 
 
     Route::apiResource('addresses', AddressController::class);
+    // User route to submit a suggestion
+    Route::post('suggestions', [SuggestionController::class, 'store'])->name('user.suggestions.store');
 });
