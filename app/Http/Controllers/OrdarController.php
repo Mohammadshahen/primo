@@ -19,6 +19,20 @@ class OrdarController extends Controller
         return $this->success($ordars, 'تم جلب الطلبات بنجاح');
     }
 
+    public function getUserOrdars(AdminOrdarFilterRequest $request): JsonResponse
+    {
+        $user_id = Auth::id();
+        $ordars = $this->service->getUserOrdars($request->validated(), $user_id);
+        return $this->success($ordars, 'تم جلب الطلبات بنجاح');
+    }
+
+    public function getSingleOrdarForUser(Ordar $ordar): JsonResponse
+    {
+        $user_id = Auth::id();
+        $ordar = $this->service->getSingleOrdarForUser($ordar, $user_id);
+        return $this->success($ordar, 'تم جلب الطلب بنجاح');
+    }
+
     public function getSingleOrdar(Ordar $ordar): JsonResponse
     {
         $ordar = $this->service->getSingleOrdar($ordar);

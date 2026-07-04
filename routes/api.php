@@ -83,6 +83,8 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
 
     Route::post('ordar/price', [OrdarController::class, 'OrdarPrice'])->name('user.ordars.price');
     Route::post('ordar/confirme', [OrdarController::class, 'confirmeOrdar'])->name('user.ordars.confirme');
+    Route::get('ordars', [OrdarController::class, 'getUserOrdars'])->name('user.ordars.index');
+    Route::get('ordars/{ordar}', [OrdarController::class, 'getSingleOrdarForUser'])->name('user.ordars.show');
 
 
 

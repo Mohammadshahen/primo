@@ -14,14 +14,13 @@ class AdminOrdarFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|string|in:pending,processing,completed,canceled',
+            'status' => 'nullable|string|in:pending,processing,completed,canceled',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'status.required' => 'حالة الطلب مطلوبة',
             'status.string' => 'حالة الطلب يجب أن تكون نص',
             'status.in' => 'حالة الطلب يجب أن تكون واحدة من القيم التالية: pending, processing, completed, canceled',
         ];

@@ -149,6 +149,42 @@ class OrdarService extends Service
             $this->throwExceptionJson('حدث خطأ أثناء جلب الطلبات', 500);
         }
     }
+
+    public function getUserOrdars(array $filters, $user_id)
+    {
+        try {
+            $query = Ordar::with(['items.variant.product'])
+                ->where('user_id', $user_id);
+
+            if (! empty($filters['status'])) {
+                $query->where('status', $filters['status']);
+            }
+
+            return $query->orderByDesc('created_at')
+                ->get()->transform(function ($ordar) {
+                    $ordar->items->transform(function ($item) {
+                        $variant = $item->variant;
+                        $product = $variant->product;
+                        return [
+                            'image' => $product->image,
+                        ];
+                    });
+                    return $ordar;
+                });
+        } catch (\Exception $e) {
+            $this->logException($e, __METHOD__ . ' - Error fetching user orders');
+            $this->throwExceptionJson('حدث خطأ أثناء جلب الطلبات', 500);
+        }
+    }
+
+    public function getSingleOrdarForUser(Ordar $ordar, $user_id)
+    {
+        if ($ordar->user_id !== $user_id) {
+            $this->throwExceptionJson('لا يمكنك الوصول إلى هذا الطلب لأنه لا ينتمي إليك.', 403);
+        }
+
+        return $this->getSingleOrdar($ordar);
+    }
     
     public function getSingleOrdar(Ordar $ordar)
     {
@@ -163,6 +199,7 @@ class OrdarService extends Service
                 $variant= $item->variant;
                 $product = $item->variant->product;
                 return [
+                    'product_id' => $product->id,
                     'name' => $product->name,
                     'image' => $product->image,
                     'quantity' => $item->count,
