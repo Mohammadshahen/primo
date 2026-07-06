@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\OfferCreatedNotificationJob;
 use App\Models\Offer;
 use App\Models\Variant;
 use Exception;
@@ -56,6 +57,8 @@ class OfferService extends Service
             ]);
 
             DB::commit();
+            $offer_refresh = Offer::with('variant.product')->where('id', $offer->id)->first();
+            OfferCreatedNotificationJob::dispatch($offer_refresh);
 
             return [
                 'success' => true,

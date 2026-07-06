@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Offer;
 use App\Models\Ordar;
 use App\Models\User;
 
@@ -12,6 +13,22 @@ class NotificationService
     public function __construct(FcmService $fcmService)
     {
         $this->fcmService = $fcmService;
+    }
+
+    public function notifyUsersAboutOffer(Offer $offer): void
+    {
+
+        $title = 'عرض جديد';
+        $body = "تم إنشاء عرض جديد على المنتج {$offer->variant->product->name}";
+
+        User::where('notification_offer', true)
+            ->chunk(100, function ($users) use ($offer, $title, $body) {
+                foreach ($users as $user) {
+                    $this->fcmService->sendToUser($user, $title, $body, [
+                        'product_id' => $offer->variant->product->id,
+                    ]);
+                }
+            });
     }
 
     public function notifictionCreateOrdarForAdmin(Ordar $ordar)
@@ -84,5 +101,4 @@ class NotificationService
             ]
         );
     }
-
 }

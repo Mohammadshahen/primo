@@ -127,6 +127,11 @@ class FcmService
             $this->sendToUser($user, $title, $body, $data);
         }
     }
+    public function sendToUserOffer(User $user, string $title, string $body, array $data = []){
+        if($user->notification_offer){
+            $this->sendToUser($user, $title, $body, $data);
+        }
+    }
 
 
     /**
