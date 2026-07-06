@@ -29,7 +29,7 @@ class UserService extends Service
             $user->update([
                 'name' => $data['name'] ?? $user->name,
                 'phone' => $data['phone'] ?? $user->phone,
-                'avatar' => $data['avatar'] ?
+                'avatar' => isset($data['avatar']) ?
                     FileStorage::fileExists(
                         $data['avatar'],
                         $user->avatar,
