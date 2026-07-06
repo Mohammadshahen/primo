@@ -40,12 +40,12 @@ class UserManagementService extends Service
 
             if ($existingUser) {
                 // إذا كان الحساب موجود ومفعل
-                if ($existingUser->isPhoneVerified()) {
+                // if ($existingUser->isPhoneVerified()) {
                     return [
                         'success' => false,
                         'message' => 'رقم الهاتف مسجل مسبقاً',
                     ];
-                }
+                // }
             }
 
             // إنشاء حساب جديد غير مؤكد
@@ -61,6 +61,10 @@ class UserManagementService extends Service
                 'is_admin'          => 0,
                 'phone_verified_at' => null, // غير مؤكد
             ]);
+
+            if ($data['fcm_token'] ?? false) {
+                $user->registerDevice($data['fcm_token']);
+            }
 
             // إرسال OTP للتأكيد
             try {
@@ -181,6 +185,10 @@ class UserManagementService extends Service
                 'success' => false,
                 'message' => 'بيانات الدخول غير صحيحة',
             ];
+        }
+
+        if ($credentials['fcm_token'] ?? false) {
+            $account->registerDevice($credentials['fcm_token']);
         }
 
         if ( $account->is_admin) {
@@ -319,10 +327,13 @@ class UserManagementService extends Service
         }
     }
 
-    public function logout($user)
+    public function logout($data = [])
     {
-        // حذف أجهزة FCM لإيقاف الإشعارات بعد تسجيل الخروج
-        \App\Models\Device::removeAllDevices($user);
+        $user = Auth::user();
+
+        if ($data['fcm_token'] ?? false) {
+            Device::removeByToken($user, $data['fcm_token']);
+        }
 
         $user->currentAccessToken()->delete();
         return ['message' => 'Logged out'];
@@ -496,42 +507,42 @@ class UserManagementService extends Service
         }
     }
 
-    public function updateProfile(array $data)
-    {
-        try {
-            /**
-             * @var User $user
-             */
-            $user = Auth::user();
+    // public function updateProfile(array $data)
+    // {
+    //     try {
+    //         /**
+    //          * @var User $user
+    //          */
+    //         $user = Auth::user();
 
-            if (!empty($data['password'])) {
-                $data['password'] = Hash::make($data['password']);
-            }
+    //         if (!empty($data['password'])) {
+    //             $data['password'] = Hash::make($data['password']);
+    //         }
 
-            $avatar = FileStorage::fileExists(
-                $data['avatar'] ?? null,
-                $user->avatar,
-                'avatars',
-                'img'
-            );
+    //         $avatar = FileStorage::fileExists(
+    //             $data['avatar'] ?? null,
+    //             $user->avatar,
+    //             'avatars',
+    //             'img'
+    //         );
 
-            if ($avatar !== null) {
-                $data['avatar'] = $avatar;
-            } else {
-                unset($data['avatar']);
-            }
+    //         if ($avatar !== null) {
+    //             $data['avatar'] = $avatar;
+    //         } else {
+    //             unset($data['avatar']);
+    //         }
 
-            $user->update($data);
+    //         $user->update($data);
 
-            return $user->fresh();
-        } catch (\Throwable $e) {
-            $this->throwExceptionJson(
-                'حدث خطأ أثناء تحديث بياناتك',
-                500,
-                $e->getMessage()
-            );
-        }
-    }
+    //         return $user->fresh();
+    //     } catch (\Throwable $e) {
+    //         $this->throwExceptionJson(
+    //             'حدث خطأ أثناء تحديث بياناتك',
+    //             500,
+    //             $e->getMessage()
+    //         );
+    //     }
+    // }
 
     /**
      * List non-admin users with optional search and pagination

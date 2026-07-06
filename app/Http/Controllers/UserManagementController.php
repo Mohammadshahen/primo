@@ -13,6 +13,7 @@ use App\Http\Requests\UserManagementRequests\StoreUserFormRequest;
 use App\Http\Requests\UserManagementRequests\ForgotPasswordRequest;
 use App\Http\Requests\UserManagementRequests\ConfirmRegistrationRequest;
 use App\Http\Requests\UserManagementRequests\ConfirmForgotPasswordRequest;
+use App\Http\Requests\UserManagementRequests\LogoutRequest;
 use App\Http\Requests\UserManagementRequests\UpdateUserProfileRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -90,9 +91,9 @@ class UserManagementController extends Controller
         return $this->success($result['data'], "Login confirmed successfully");
     }
 
-    public function logout(Request $request)
+    public function logout(LogoutRequest $request)
     {
-        $result = $this->service->logout($request->user());
+        $result = $this->service->logout($request->validated());
         return $this->success($result, "Logout success");
     }
 

@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\DB;
 class OrdarService extends Service
 {
     use DistanceTrait;
+
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     public function calculatePrice(array $data)
     {
         $user_id = Auth::id();
@@ -98,14 +105,22 @@ class OrdarService extends Service
                     'count' => $item->count,
                 ]);
 
+
+
                 $item->variant->decrement('stock', $item->count);
                 if ($item->variant->stock == 0) {
                     $item->variant->update(['is_active' => false]);
                 }
                 $this->checkProductAvailability($item->variant->product_id);
+                $item->delete();
             };
 
             DB::commit();
+
+            $ordar_refreshed = Ordar::with(['user'])->find($ordar->id);
+            $this->notificationService->notifictionCreateOrdarForAdmin($ordar_refreshed);
+            $this->notificationService->notifictionCreateOrdarForUser($ordar_refreshed);
+
 
             return $ordar;
         } catch (HttpResponseException $e) {
@@ -118,7 +133,7 @@ class OrdarService extends Service
         }
     }
 
-    
+
     public function checkProductAvailability($product_id)
     {
 
@@ -130,7 +145,7 @@ class OrdarService extends Service
             $product->update(['is_active' => false]);
         }
     }
-    
+
 
 
 
@@ -138,11 +153,11 @@ class OrdarService extends Service
     {
         try {
             $query = Ordar::with(['user:id,name,phone,avatar']);
-    
+
             if (! empty($filters['status'])) {
                 $query->where('status', $filters['status']);
             }
-    
+
             return $query->orderByDesc('created_at')->get();
         } catch (\Exception $e) {
             $this->logException($e, __METHOD__ . ' - Error fetching orders');
@@ -185,7 +200,7 @@ class OrdarService extends Service
 
         return $this->getSingleOrdar($ordar);
     }
-    
+
     public function getSingleOrdar(Ordar $ordar)
     {
         try {
@@ -195,8 +210,8 @@ class OrdarService extends Service
                 'items.variant.product',
             ]);
 
-             $ordar->items->transform(function($item){
-                $variant= $item->variant;
+            $ordar->items->transform(function ($item) {
+                $variant = $item->variant;
                 $product = $item->variant->product;
                 return [
                     'product_id' => $product->id,
@@ -208,13 +223,10 @@ class OrdarService extends Service
                     'has_active_offer' => $variant->has_active_offer,
                     'new_price' => $variant->has_active_offer ? $variant->price - $variant->offer->discount_value : null,
 
-                    ];
-
+                ];
             });
 
             return $ordar;
-
-             
         } catch (\Exception $e) {
             $this->logException($e, __METHOD__ . ' - Error fetching order details');
             $this->throwExceptionJson('حدث خطأ أثناء جلب تفاصيل الطلب', 500);
@@ -222,10 +234,26 @@ class OrdarService extends Service
     }
 
 
-    public function changeOrdarStatus(array $data,Ordar $ordar)
+    public function changeOrdarStatus(array $data, Ordar $ordar)
     {
+
         try {
+            $ordar->load(['user']);
             $ordar->update(['status' => $data['status']]);
+
+            if (isset($data['status']) && $data['status'] == 'processing') {
+                if ($ordar->is_delivere) {
+                    $this->notificationService->notifictionDeliveryOrdarForUser($ordar);
+                } else {
+                    $this->notificationService->notifictionOnStoreOrdarForUser($ordar);
+                }
+            }elseif(isset($data['status']) && $data['status'] == 'completed'){
+                $this->notificationService->notifictionCompletedOrdarForUser($ordar);
+
+            }elseif(isset($data['status']) && $data['status'] == 'canceled'){
+                $this->notificationService->notifictionCanceledOrdarForUser($ordar);
+            }
+
             return $ordar;
         } catch (\Exception $e) {
             $this->logException($e, __METHOD__ . ' - Error changing order status');

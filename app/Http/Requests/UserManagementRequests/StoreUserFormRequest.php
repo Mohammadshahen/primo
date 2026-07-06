@@ -29,6 +29,7 @@ class StoreUserFormRequest extends FormRequest
                                     |mimes:png,jpg,jpeg
                                     |mimetypes:image/jpeg,image/png,image/jpg
                                     |max:5000',
+            'fcm_token' => 'nullable|string|min:10|max:255',
         ];
     }
     /**
@@ -43,6 +44,8 @@ class StoreUserFormRequest extends FormRequest
             'phone' => 'رقم الواتساب',
             'password' => 'كلمة المرور',
             'password_confirmation' => 'تأكيد كلمة المرور',
+            'fcm_token' => ' توكين الاشعارات',
+            'avatar' => 'الصورة الشخصية',
 
         ];
     }
@@ -67,6 +70,9 @@ class StoreUserFormRequest extends FormRequest
             'avatar.mimes' => 'الصورة يجب أن تكون من نوع: :values.',
             'avatar.max' => 'حجم :attribute يجب ألا يتجاوز :max كيلوبايت (ما يعادل 5 ميجابايت).',
             'avatar.mimetypes' => 'نوع ملف الصورة غير مسموح به. الأنواع المسموحة: :values.',
+            'fcm_token.string' => 'حقل :attribute يجب أن يكون نصاً.',
+            'fcm_token.min' => 'توكين الاشعارات غير صالح',
+            'fcm_token.max' => 'توكين الاشعارات غير صالح',
         ];
     }
 }
