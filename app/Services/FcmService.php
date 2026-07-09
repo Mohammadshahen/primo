@@ -30,7 +30,7 @@ class FcmService
     protected function initConfig()
     {
         $this->firebaseProjectId = env('FIREBASE_PROJECT_ID', '');
-        $this->credentialsPath = env('FIREBASE_CREDENTIALS_PATH', '');
+        $this->credentialsPath = storage_path(env('FIREBASE_CREDENTIALS_PATH', ''));
     }
 
     /**
