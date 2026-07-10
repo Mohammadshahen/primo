@@ -161,6 +161,8 @@ class UserService extends Service
                         // تعيين سعر افتراضي أو تجاهل المنتج
                         $product->price = 0; // أو null
                     }
+
+                    $product->is_active = $product->variants->isNotEmpty() ? $product->is_active : false;
                     $product->makeHidden('variants');
                     return $product;
                 });
