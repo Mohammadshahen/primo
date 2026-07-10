@@ -33,7 +33,7 @@ class ProductService extends Service
     public function getProductById(Product $product): array
     {
         try {
-            $product->load(['category:id,name', 'variants','variants.activeOffer','ratings']);
+            $product->load(['category:id,name', 'variants', 'variants.activeOffer', 'ratings']);
             $data = [
                 'id' => $product->id,
                 'category_name' => $product->category->name,
@@ -237,7 +237,9 @@ class ProductService extends Service
     public function deleteVariant(Variant $variant): array
     {
         try {
+            $product_id = $variant->product_id;
             $variant->delete();
+            $this->checkProductAvailability($product_id);
 
             return [
                 'success' => true,
@@ -250,6 +252,18 @@ class ProductService extends Service
                 'success' => false,
                 'message' => 'فشل حذف المتغير',
             ];
+        }
+    }
+
+    public function checkProductAvailability($product_id)
+    {
+
+        $product = Product::with(['variants' => function ($query) {
+            $query->where('is_active', true);
+        }])->find($product_id);
+
+        if ($product->variants->isEmpty()) {
+            $product->update(['is_active' => false]);
         }
     }
 }

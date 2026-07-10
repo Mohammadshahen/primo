@@ -146,17 +146,13 @@ class UserService extends Service
     public function getFavoriteProducts(User $user): array
     {
         try {
-            $products = Product::active()
-            ->whereHas('variants', function ($query) {
-                $query->where('is_active', true);
-            })
-            ->with(['variants' => function ($query) {
-                //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
-                $query->select('id', 'product_id', 'price')
-                    ->where('is_active', true)
-                    ->orderBy('price', 'asc')
-                    ->limit(1);
-            }])->whereHas('favorites', function ($query) use ($user) {
+            $products = Product::with(['variants' => function ($query) {
+                    //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
+                    $query->select('id', 'product_id', 'price')
+                        ->where('is_active', true)
+                        ->orderBy('price', 'asc')
+                        ->limit(1);
+                }])->whereHas('favorites', function ($query) use ($user) {
                     $query->where('user_id', $user->id);
                 })->get()->map(function ($product) {
                     if ($product->variants->isNotEmpty()) {
