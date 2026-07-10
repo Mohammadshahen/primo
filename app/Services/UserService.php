@@ -139,7 +139,7 @@ class UserService extends Service
         } catch (\Throwable $e) {
             $this->logException($e, __METHOD__ . ' toggleFavorite');
 
-           $this->throwExceptionJson('حدث خطأ أثناء تحديث المفضلة. يرجى المحاولة مرة أخرى.', 500);
+            $this->throwExceptionJson('حدث خطأ أثناء تحديث المفضلة. يرجى المحاولة مرة أخرى.', 500);
         }
     }
 
@@ -149,19 +149,23 @@ class UserService extends Service
             $products = Product::active()->with(['variants' => function ($query) {
                 //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
                 $query->select('id', 'product_id', 'price')
-                ->where('is_active' , true)
-                ->orderBy('price', 'asc')
-                ->limit(1);
-            }])->
-            whereHas('favorites', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->get()->map(function ($product){
-                    $product->price = $product->variants->first()->price;
+                    ->where('is_active', true)
+                    ->orderBy('price', 'asc')
+                    ->limit(1);
+            }])->whereHas('favorites', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })->get()->map(function ($product) {
+                    if ($product->variants->isNotEmpty()) {
+                        $product->price = $product->variants->first()->price;
+                    } else {
+                        // تعيين سعر افتراضي أو تجاهل المنتج
+                        $product->price = 0; // أو null
+                    }
                     $product->makeHidden('variants');
                     return $product;
-            });
+                });
 
-            
+
             return [
                 'success' => true,
                 'message' => 'تم جلب المنتجات المفضلة بنجاح',
@@ -178,7 +182,7 @@ class UserService extends Service
     {
         $ordar->load('items.variant.product');
         $product_ids = $ordar->items->pluck('variant.product.id')->toArray();
-        if($ordar->user_id !== $user->id || !in_array($product->id, $product_ids) || $ordar->status !== 'completed') {
+        if ($ordar->user_id !== $user->id || !in_array($product->id, $product_ids) || $ordar->status !== 'completed') {
             $this->throwExceptionJson('لا يمكنك تقييم هذا المنتج.', 403);
         }
         try {
