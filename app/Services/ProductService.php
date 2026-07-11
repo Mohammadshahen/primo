@@ -12,7 +12,7 @@ class ProductService extends Service
 {
     public function list()
     {
-        return Product::with('category:id,name')
+        return Product::with('category:id,name','variants')
             // ->select('id', 'category_id', 'name', 'image', 'description', 'sku_code', 'created_at')
             ->orderBy('created_at', 'desc')
             ->get();
