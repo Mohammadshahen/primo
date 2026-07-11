@@ -15,7 +15,11 @@ class ProductService extends Service
         return Product::with('category:id,name','variants')
             // ->select('id', 'category_id', 'name', 'image', 'description', 'sku_code', 'created_at')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()->map(function ($product) {
+                $product->total_stack = $product->variants->sum('stock') ?? 0;
+                $product->lowest_price = $product->variants->min('price') ?? 0;
+                return $product;
+            });
     }
 
     public function show(Product $product)
