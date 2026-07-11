@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Setting::create([
-            'key' => 'delivery_price',
+            'key_name' => 'delivery_price',
             'value' => 100.0,
         ]);
 

@@ -214,6 +214,7 @@ class OrdarService extends Service
                 $variant = $item->variant;
                 $product = $item->variant->product;
                 return [
+                    'variant_id' => $variant->id,
                     'product_id' => $product->id,
                     'name' => $product->name,
                     'image' => $product->image,
