@@ -152,13 +152,17 @@ class OrdarService extends Service
     public function getAllOrdars(array $filters)
     {
         try {
-            $query = Ordar::with(['user:id,name,phone,avatar']);
+            $query = Ordar::with(['user:id,name,phone,avatar','items']);
 
             if (! empty($filters['status'])) {
                 $query->where('status', $filters['status']);
             }
 
-            return $query->orderByDesc('created_at')->get();
+            return $query->orderByDesc('created_at')->get()
+            ->map(function($ordar){
+                $ordar->item_count = $ordar->items->sum('count');
+                return $ordar;
+            });
         } catch (\Exception $e) {
             $this->logException($e, __METHOD__ . ' - Error fetching orders');
             $this->throwExceptionJson('حدث خطأ أثناء جلب الطلبات', 500);
