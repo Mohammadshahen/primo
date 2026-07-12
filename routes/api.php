@@ -54,6 +54,8 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
 
     // Admin routes for suggestions
+    Route::get('suggestions', [SuggestionController::class, 'index'])->name('admin.suggestions.index');
+    Route::get('suggestions/{suggestion}', [SuggestionController::class, 'show'])->name('admin.suggestions.show');
     Route::post('suggestions/{suggestion}/status', [SuggestionController::class, 'changeStatus'])->name('admin.suggestions.status.change');
 
 

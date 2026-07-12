@@ -29,7 +29,32 @@ class SuggestionController extends Controller
 
         $suggestion = $this->service->createSuggestion($request->validated(), $user);
 
-        return response()->json(['data' => $suggestion], 201);
+        return $this->success($suggestion, 'تم إنشاء الاقتراح بنجاح', 201);
+    }
+
+    /**
+     * Admin: get all suggestions.
+     *
+     * @return JsonResponse
+     */
+    public function index(): JsonResponse
+    {
+        $suggestions = $this->service->getAllSuggestions();
+
+        return $this->success($suggestions, 'تم جلب الاقتراحات بنجاح');
+    }
+
+    /**
+     * Admin: get suggestion by id.
+     *
+     * @param int $suggestion
+     * @return JsonResponse
+     */
+    public function show(int $suggestion): JsonResponse
+    {
+        $suggestionData = $this->service->getSuggestionById($suggestion);
+
+        return $this->success($suggestionData, 'تم جلب الاقتراح بنجاح');
     }
 
     /**
@@ -43,6 +68,6 @@ class SuggestionController extends Controller
     {
         $suggestion = $this->service->changeStatus($id, $request->validated()['status']);
 
-        return response()->json(['data' => $suggestion]);
+        return $this->success($suggestion, 'تم تغيير حالة الاقتراح بنجاح');
     }
 }

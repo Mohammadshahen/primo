@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
             VariantsTableSeeder::class,
             OffersTableSeeder::class,
             AddressesTableSeeder::class,
+            SuggestionSeeder::class,
         ]);
     }
 }

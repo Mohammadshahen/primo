@@ -50,4 +50,37 @@ class SuggestionService extends Service
             $this->throwExceptionJson('فشل تغيير حالة الاقتراح', 500);
         }
     }
+
+    /**
+     * Get all suggestions for admin.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllSuggestions()
+    {
+        try {
+            return Suggestion::with('user')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' getAllSuggestions');
+            $this->throwExceptionJson('فشل جلب الاقتراحات', 500);
+        }
+    }
+
+    /**
+     * Get a single suggestion by id.
+     *
+     * @param int $id
+     * @return Suggestion
+     */
+    public function getSuggestionById(int $id): Suggestion
+    {
+        try {
+            return Suggestion::with('user')->findOrFail($id);
+        } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' getSuggestionById');
+            $this->throwExceptionJson('فشل جلب الاقتراح', 500);
+        }
+    }
 }
