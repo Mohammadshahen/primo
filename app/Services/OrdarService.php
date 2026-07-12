@@ -207,7 +207,7 @@ class OrdarService extends Service
             $ordar = $ordar->load([
                 'user:id,name,phone,avatar,avatar',
                 'address',
-                'items.variant.product',
+                'items.variant.product.ratings',
             ]);
 
             $ordar->items->transform(function ($item) {
@@ -216,6 +216,7 @@ class OrdarService extends Service
                 return [
                     'variant_id' => $variant->id,
                     'product_id' => $product->id,
+                    'product_ratings' => $product->ratings->avg('rating') ?? 0,
                     'name' => $product->name,
                     'image' => $product->image,
                     'quantity' => $item->count,
