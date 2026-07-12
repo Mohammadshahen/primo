@@ -49,6 +49,14 @@ class Variant extends Model
         return $this->activeOffer?->id;
     }
 
+    public function scopeAvailable($query)
+    {
+        return $query->where('is_active', true)
+            ->whereHas('product', function ($query) {
+                $query->where('is_active', true);
+            });
+    }
+
     public function ordarItams()
     {
         return $this->hasMany(OrdarItam::class, 'variant_id');

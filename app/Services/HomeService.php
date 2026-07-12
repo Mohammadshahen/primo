@@ -43,9 +43,9 @@ class HomeService extends Service
             ->with(['variants' => function ($query) {
                 //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
                 $query->select('id', 'product_id', 'price')
-                ->where('is_active' , true)
-                ->orderBy('price', 'asc')
-                ->limit(1);
+                    ->where('is_active', true)
+                    ->orderBy('price', 'asc')
+                    ->limit(1);
             }, 'category' => function ($query) {
                 $query->select('id', 'name');
             }])
@@ -58,28 +58,27 @@ class HomeService extends Service
                     });
             })
             ->get();
-            return $products->filter(function ($product) {
-                return $product->variants->isNotEmpty();
-            })->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'category_name' => $product->category->name,
-                    'name' => $product->name,
-                    'image' => $product->image,
-                    'price' => $product->variants->first()->price ?? null,
-                ];
-            })->values();
+        return $products->filter(function ($product) {
+            return $product->variants->isNotEmpty();
+        })->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'category_name' => $product->category->name,
+                'name' => $product->name,
+                'image' => $product->image,
+                'price' => $product->variants->first()->price ?? null,
+                'ratings' => $product->ratings->avg('rating'),
+            ];
+        })->values();
     }
 
     private function getActiveOffers(?string $search)
     {
         $offers = Offer::select('id', 'variant_id', 'from', 'to', 'discount_percentage', 'discount_value')
-            ->with(['variant' => function ($query) {
-                $query->select('id', 'product_id', 'property', 'price', 'stock')
-                    ->with(['product' => function ($query) {
-                        $query->select('id', 'name', 'image');
-                    }]);
-            }])
+            ->with(['variant.product.ratings'])
+            ->whereHas('variant', function ($query) {
+                $query->Available();
+            })
             ->active()
             ->when($search, function ($query, $search) {
                 $query->whereHas('variant', function ($variantQuery) use ($search) {
@@ -95,6 +94,8 @@ class HomeService extends Service
         return $offers->filter(function ($offer) {
             return $offer->variant && $offer->variant->product;
         })->map(function ($offer) {
+            $offer->variant->product->rating = $offer->variant->product->ratings->avg('rating') ?? 0;
+            $offer->variant->product->makeHidden('ratings');
             return [
                 'id' => $offer->id,
                 'from' => $offer->from->toDateString(),
@@ -106,6 +107,7 @@ class HomeService extends Service
                 'property' => $offer->variant->property,
                 'variant_price' => $offer->variant->price,
                 'variant_stock' => $offer->variant->stock,
+                'variant_product' => $offer->variant,
             ];
         })->values();
     }
@@ -133,18 +135,18 @@ class HomeService extends Service
             ->where('status', 'pending')
             ->orderByDesc('created_at')
             ->get();
-            // ->map(function (Ordar $ordar) {
-            //     return [
-            //         'id' => $ordar->id,
-            //         'user_name' => $ordar->user?->name,
-            //         'address' => $ordar->address?->name,
-            //         'status' => $ordar->status,
-            //         'amount' => (float) $ordar->amount,
-            //         'delivery_amount' => (float) $ordar->delivere_amount,
-            //         'total_amount' => (float) $ordar->total_amount,
-            //         'created_at' => $ordar->created_at->toDateTimeString(),
-            //     ];
-            // });
+        // ->map(function (Ordar $ordar) {
+        //     return [
+        //         'id' => $ordar->id,
+        //         'user_name' => $ordar->user?->name,
+        //         'address' => $ordar->address?->name,
+        //         'status' => $ordar->status,
+        //         'amount' => (float) $ordar->amount,
+        //         'delivery_amount' => (float) $ordar->delivere_amount,
+        //         'total_amount' => (float) $ordar->total_amount,
+        //         'created_at' => $ordar->created_at->toDateTimeString(),
+        //     ];
+        // });
     }
 
     private function getPendingSuggestions()
