@@ -14,6 +14,7 @@ class Address extends Model
         'location_lat',
         'location_lng',
         'name',
+        'phone',
         'description',
     ];
 

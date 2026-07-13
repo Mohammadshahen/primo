@@ -32,6 +32,7 @@ class AddressService extends Service
 
             $address = $user->addresses()->create([
                 'name' => $data['name'],
+                'phone' => $data['phone'],
                 'description' => $data['description'] ?? null,
                 'location_lat' => $data['location_lat'],
                 'location_lng' => $data['location_lng'],
