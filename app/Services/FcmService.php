@@ -105,11 +105,18 @@ class FcmService
      */
     public function sendToUser(User $user, string $title, string $body, array $data = []): int
     {
+
         $tokens = Device::getTokens($user);
         $successCount = 0;
 
         foreach ($tokens as $token) {
             if ($this->sendToToken($token, $title, $body, $data)) {
+                Notification::create([
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $data,
+                ]);
                 $successCount++;
             }
         }
@@ -122,13 +129,15 @@ class FcmService
         return $successCount;
     }
 
-    public function sendToUserOrdar(User $user, string $title, string $body, array $data = []){
-        if($user->notification_order){
+    public function sendToUserOrdar(User $user, string $title, string $body, array $data = [])
+    {
+        if ($user->notification_order) {
             $this->sendToUser($user, $title, $body, $data);
         }
     }
-    public function sendToUserOffer(User $user, string $title, string $body, array $data = []){
-        if($user->notification_offer){
+    public function sendToUserOffer(User $user, string $title, string $body, array $data = [])
+    {
+        if ($user->notification_offer) {
             $this->sendToUser($user, $title, $body, $data);
         }
     }

@@ -4,13 +4,14 @@ use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\OrdarController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SuggestionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\SuggestionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('register', [UserManagementController::class, 'register']);
@@ -59,6 +60,8 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::post('suggestions/{suggestion}/status', [SuggestionController::class, 'changeStatus'])->name('admin.suggestions.status.change');
 
 
+    Route::get('notifications/history', [NotificationController::class, 'adminNotification'])->name('admin.notifications.history');
+
     Route::get('home', [HomeController::class, 'adminHome'])->name('admin.home');
 });
 
@@ -73,6 +76,7 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::post('change-password', [UserController::class, 'changePasswordUser'])->name('user.profile.change-password');
     Route::get('notifications', [UserController::class, 'getNotificationSettingsUser'])->name('user.notifications.show');
     Route::patch('notifications', [UserController::class, 'updateNotificationSettingsUser'])->name('user.notifications.update');
+    Route::get('notifications/history', [NotificationController::class, 'index'])->name('user.notifications.history');
     Route::post('favorites/toggle/{product}', [UserController::class, 'toggleFavoriteUser'])->name('user.favorites.toggle');
     Route::get('favorites', [UserController::class, 'getFavoriteProductsUser'])->name('user.favorites.index');
 

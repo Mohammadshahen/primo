@@ -81,6 +81,11 @@ class User extends Authenticatable
         return $this->hasMany(Cart::class);
     }
 
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     /**
      * Register or update FCM token for a device.
      * Users support multiple devices.

@@ -101,4 +101,11 @@ class NotificationService
             ]
         );
     }
+
+    public function getUserNotifications(User $user)
+    {
+        return $user->notifications()
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 }
