@@ -47,7 +47,7 @@ class OrdarService extends Service
 
             $result['distance'] = 0;
             $result['delivery_price'] = 0;
-            $result['delivery_fee_for_meter'] = Setting::getValue('delivery_price', 0);
+            $result['delivery_fee_for_meter'] = (float) Setting::getValue('delivery_price', 0);
 
 
             if ($data['is_delivery'] ?? false) {

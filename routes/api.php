@@ -11,6 +11,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SuggestionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\GeneralSettingController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +50,10 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('settings/delivery-price', [SettingController::class, 'getDeliveryPrice'])->name('admin.settings.delivery-price.show');
     Route::patch('settings/delivery-price', [SettingController::class, 'updateDeliveryPrice'])->name('admin.settings.delivery-price.update');
+    Route::post('settings/general', [GeneralSettingController::class, 'update'])->name('admin.settings.general.update');
+    Route::get('settings/general', [GeneralSettingController::class, 'show'])->name('admin.settings.general.show');
+
+
     Route::delete('variants/{variant}/delete', [ProductController::class, 'deleteVariant'])->name('products.variants.destroy');
     Route::post('products/toggle-active/{product}', [ProductController::class, 'toggleStatus'])->name('products.toggle-active');
     Route::post('address', [AddressController::class, 'saveAdminAddress'])->name('admin.store-address.save');
@@ -97,4 +102,5 @@ Route::prefix('user')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('addresses', AddressController::class);
     // User route to submit a suggestion
     Route::post('suggestions', [SuggestionController::class, 'store'])->name('user.suggestions.store');
+    Route::get('settings/general', [GeneralSettingController::class, 'show'])->name('user.settings.general.show');
 });

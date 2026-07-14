@@ -27,4 +27,71 @@ class SettingService extends Service
             ];
         }
     }
+
+    /**
+     * Update or create general settings (admin).
+     * Returns array of saved key => value pairs or error structure on failure.
+     *
+     * @param array $data
+     * @return array
+     */
+    public function updateGeneralSettings(array $data): array
+    {
+        try {
+            DB::beginTransaction();
+
+            $keys = [
+                'facebook_account',
+                'admin_phone',
+                'customer_service_phone',
+                'working_hours',
+                'location',
+            ];
+
+            $result = [];
+
+            foreach ($keys as $key) {
+                if (array_key_exists($key, $data)) {
+                    Setting::setValue($key, $data[$key]);
+                    $result[$key] = $data[$key];
+                }
+            }
+
+            DB::commit();
+
+            return $result;
+        } catch (Exception $e) {
+            DB::rollBack();
+            $this->logException($e, __METHOD__ . ' updateGeneralSettings');
+            $this->throwExceptionJson('فشل في تحديث الإعدادات العامة', 500);
+        }
+    }
+
+    /**
+     * Get general settings for user.
+     *
+     * @return array
+     */
+    public function getGeneralSettings(): array
+    {
+        try {
+            $keys = [
+                'facebook_account',
+                'admin_phone',
+                'customer_service_phone',
+                'working_hours',
+                'location',
+            ];
+
+            $data = [];
+            foreach ($keys as $key) {
+                $data[$key] = Setting::getValue($key, null);
+            }
+
+            return $data;
+        } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' getGeneralSettings');
+            $this->throwExceptionJson('فشل في جلب الإعدادات العامة', 500);
+        }
+    }
 }

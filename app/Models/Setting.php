@@ -15,9 +15,9 @@ class Setting extends Model
         'value',
     ];
 
-    protected $casts = [
-        'value' => 'float',
-    ];
+    // protected $casts = [
+    //     'value' => 'float',
+    // ];
 
     public static function getValue(string $key, mixed $default = null): mixed
     {
