@@ -7,6 +7,7 @@ use App\Models\Offer;
 use App\Models\Ordar;
 use App\Models\Product;
 use App\Models\Suggestion;
+use Carbon\Carbon;
 
 class HomeService extends Service
 {
@@ -115,9 +116,24 @@ class HomeService extends Service
     public function adminHome(): array
     {
         try {
+            // Week starts on Sunday
+            $startOfWeek = Carbon::now()->startOfWeek(Carbon::SUNDAY)->startOfDay();
+            $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
+            $weeklyTotal = (float) Ordar::where('status', 'completed')
+                ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                ->sum('total_amount');
+
+            $weeklyOrdersCount = Ordar::query()
+                ->where('status', 'completed')
+                ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                ->count();
+
             return [
                 'total_amount' => (float) Ordar::where('status', 'completed')->sum('total_amount'),
+                'weekly_total_amount' => $weeklyTotal,
                 'pending_orders_count' => Ordar::query()->where('status', 'pending')->count(),
+                'weekly_orders_count' => $weeklyOrdersCount,
                 'products_count' => Product::query()->count(),
                 'pending_orders' => $this->getPendingOrders(),
                 'pending_suggestions' => $this->getPendingSuggestions(),
@@ -163,7 +179,7 @@ class HomeService extends Service
                     'name' => $suggestion->name,
                     'description' => $suggestion->description,
                     'status' => $suggestion->status,
-                    'created_at' => $suggestion->created_at->toDateTimeString(),
+                    'created_at' => $suggestion->created_at ? $suggestion->created_at->toDateTimeString() : now()->toDateTimeString(),
                     'user' => $suggestion->user,
                 ];
             });
