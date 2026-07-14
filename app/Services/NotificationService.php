@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Offer;
 use App\Models\Ordar;
+use App\Models\Suggestion;
 use App\Models\User;
 
 class NotificationService
@@ -107,5 +108,38 @@ class NotificationService
         return $user->notifications()
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    public function notifictionCreateSuggestionForAdmin(Suggestion $suggestion)
+    {
+        $admin = User::where('is_admin', true)->first();
+        if (! $admin) {
+            return;
+        }
+
+        return $this->fcmService->sendToUser(
+            $admin,
+            'اقتراح جديد',
+            "لديك اقتراح جديد من {$suggestion->user?->name}",
+            [
+                'suggestion_id' => $suggestion->id,
+            ]
+        );
+    }
+
+    public function notifictionSuggestionAcceptedForUser(Suggestion $suggestion)
+    {
+        if (! $suggestion->user) {
+            return;
+        }
+
+        return $this->fcmService->sendToUser(
+            $suggestion->user,
+            'تم قبول اقتراحك',
+            "تم قبول اقتراحك: {$suggestion->name}",
+            [
+                'suggestion_id' => $suggestion->id,
+            ]
+        );
     }
 }

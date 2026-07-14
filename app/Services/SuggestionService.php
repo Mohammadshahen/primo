@@ -4,10 +4,17 @@ namespace App\Services;
 
 use App\Models\Suggestion;
 use App\Models\User;
+use App\Services\NotificationService;
 use Exception;
 
 class SuggestionService extends Service
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     /**
      * Create a suggestion for a user.
      *
@@ -19,11 +26,21 @@ class SuggestionService extends Service
     public function createSuggestion(array $data, User $user): Suggestion
     {
         try { 
-            return Suggestion::create([
+            $suggestion = Suggestion::create([
                 'name' => $data['name'],
                 'description' => $data['description'],
                 'user_id' => $user->id,
             ]);
+
+            // Notify admins about the new suggestion
+            try {
+                $this->notificationService->notifictionCreateSuggestionForAdmin($suggestion);
+            } catch (Exception $e) {
+                // Log but don't fail the request if notification sending fails
+                $this->logException($e, __METHOD__ . ' notify admins on suggestion create');
+            }
+
+            return $suggestion;
         } catch (Exception $e) {
           $this->logException($e, __METHOD__ . ' createSuggestion');
           $this->throwExceptionJson('فشل إنشاء الاقتراح', 500);
@@ -44,6 +61,16 @@ class SuggestionService extends Service
             $suggestion = Suggestion::findOrFail($id);
             $suggestion->status = $status;
             $suggestion->save();
+
+            // If admin accepted the suggestion, notify the suggestion owner
+            if ($status === 'approved') {
+                try {
+                    $this->notificationService->notifictionSuggestionAcceptedForUser($suggestion);
+                } catch (Exception $e) {
+                    $this->logException($e, __METHOD__ . ' notify user on suggestion accepted');
+                }
+            }
+
             return $suggestion;
         } catch (Exception $e) {
             $this->logException($e, __METHOD__ . ' changeStatus');
