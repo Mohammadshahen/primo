@@ -43,7 +43,7 @@ class HomeService extends Service
         $products =  Product::select('id', 'category_id', 'name', 'image')
             ->with(['variants' => function ($query) {
                 //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
-                $query->select('id', 'product_id', 'price')
+                $query->select('id', 'product_id', 'price', 'is_dollar', 'stock', 'property', 'is_active')
                     ->where('is_active', true)
                     ->orderBy('price', 'asc')
                     ->limit(1);
