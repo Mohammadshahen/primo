@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\Variant;
 use Exception;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ProductService extends Service
@@ -51,6 +50,7 @@ class ProductService extends Service
                     return [
                         'id' => $variant->id,
                         'price' => $variant->price,
+                        'is_dollar' => $variant->is_dollar,
                         'stock' => $variant->stock,
                         'property' => $variant->property,
                         'is_active' => $variant->is_active,
@@ -91,6 +91,7 @@ class ProductService extends Service
             foreach ($data['variants'] as $variantData) {
                 $product->variants()->create([
                     'price' => $variantData['price'] ?? 1,
+                    'is_dollar' => $variantData['is_dollar'] ?? false,
                     'stock' => $variantData['stock'] ?? 1,
                     'property' => $variantData['property'] ?? null,
                     'is_active' => true,
@@ -126,6 +127,7 @@ class ProductService extends Service
                     if ($variant) {
                         $variant->update([
                             'price' => $variantData['price'] ?? $variant->price,
+                            'is_dollar' => $variantData['is_dollar'] ?? $variant->is_dollar,
                             'stock' => $variantData['stock'] ?? $variant->stock,
                             'property' => $variantData['property'] ?? $variant->property,
                             'is_active' => $variantData['is_active'] ?? $variant->is_active,
@@ -138,6 +140,7 @@ class ProductService extends Service
                 foreach ($data['add_variants'] as $variantData) {
                     $product->variants()->create([
                         'price' => $variantData['price'] ?? 1,
+                        'is_dollar' => $variantData['is_dollar'] ?? false,
                         'stock' => $variantData['stock'] ?? 1,
                         'property' => $variantData['property'] ?? null,
                         'is_active' => true,

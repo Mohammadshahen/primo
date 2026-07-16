@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class SettingService extends Service
 {
-    public function updateDeliveryPrice(float $price)
+    public function updateDeliveryPrice(float $price): array
     {
         try {
             DB::beginTransaction();
@@ -21,10 +21,50 @@ class SettingService extends Service
         } catch (Exception $e) {
             DB::rollBack();
             $this->logException($e, __METHOD__ . ' updateDeliveryPrice');
+
             return [
                 'success' => false,
                 'message' => 'حدث خطأ أثناء تحديث سعر التوصيل: ' . $e->getMessage(),
             ];
+        }
+    }
+
+    public function getDeliveryPrice(): float
+    {
+        try {
+            return (float) Setting::getValue('delivery_price', 0.0);
+        } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' getDeliveryPrice');
+            $this->throwExceptionJson('فشل في جلب سعر التوصيل', 500);
+        }
+    }
+
+    public function updateDollarValue(float $value): array
+    {
+        try {
+            DB::beginTransaction();
+
+            Setting::setValue('dollar_value', $value);
+
+            DB::commit();
+
+            return [
+                'dollar_value' => $value,
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            $this->logException($e, __METHOD__ . ' updateDollarValue');
+            $this->throwExceptionJson('فشل في تحديث قيمة الدولار', 500);
+        }
+    }
+
+    public function getDollarValue(): float
+    {
+        try {
+            return (float) Setting::getValue('dollar_value', 1.0);
+        } catch (Exception $e) {
+            $this->logException($e, __METHOD__ . ' getDollarValue');
+            $this->throwExceptionJson('فشل في جلب قيمة الدولار', 500);
         }
     }
 
@@ -46,6 +86,7 @@ class SettingService extends Service
                 'customer_service_phone',
                 'working_hours',
                 'location',
+                'dollar_value',
             ];
 
             $result = [];
@@ -81,6 +122,7 @@ class SettingService extends Service
                 'customer_service_phone',
                 'working_hours',
                 'location',
+                'dollar_value',
             ];
 
             $data = [];

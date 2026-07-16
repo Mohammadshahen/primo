@@ -19,6 +19,7 @@ class UpdateGeneralSettingsRequest extends FormRequest
             'customer_service_phone' => ['nullable', 'string', 'max:50'],
             'working_hours' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
+            'dollar_value' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -30,6 +31,7 @@ class UpdateGeneralSettingsRequest extends FormRequest
             'customer_service_phone' => 'رقم خدمة الزبائن',
             'working_hours' => 'أوقات العمل',
             'location' => 'الموقع',
+            'dollar_value' => 'قيمة الدولار',
         ];
     }
 
@@ -38,6 +40,8 @@ class UpdateGeneralSettingsRequest extends FormRequest
         return [
             'string' => 'حقل :attribute يجب أن يكون نصاً.',
             'max' => 'حقل :attribute يجب أن لا يتجاوز :max حرفاً.',
+            'numeric' => 'حقل :attribute يجب أن يكون رقماً.',
+            'min' => 'حقل :attribute يجب أن يكون أكبر من أو يساوي :min.',
         ];
     }
 }

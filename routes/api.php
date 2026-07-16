@@ -50,6 +50,8 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 
     Route::get('settings/delivery-price', [SettingController::class, 'getDeliveryPrice'])->name('admin.settings.delivery-price.show');
     Route::patch('settings/delivery-price', [SettingController::class, 'updateDeliveryPrice'])->name('admin.settings.delivery-price.update');
+    Route::get('settings/dollar-value', [SettingController::class, 'getDollarValue'])->name('admin.settings.dollar-value.show');
+    Route::patch('settings/dollar-value', [SettingController::class, 'updateDollarValue'])->name('admin.settings.dollar-value.update');
     Route::post('settings/general', [GeneralSettingController::class, 'update'])->name('admin.settings.general.update');
     Route::get('settings/general', [GeneralSettingController::class, 'show'])->name('admin.settings.general.show');
 

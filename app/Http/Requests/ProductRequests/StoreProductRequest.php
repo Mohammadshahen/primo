@@ -24,6 +24,7 @@ class StoreProductRequest extends FormRequest
             'variants' => 'required|array|min:1',
             'variants.*.property' => 'required|string|max:255',
             'variants.*.price' => 'required|numeric|min:1',
+            'variants.*.is_dollar' => 'nullable|boolean',
             'variants.*.stock' => 'required|integer|min:1',
         ];
     }
@@ -38,6 +39,7 @@ class StoreProductRequest extends FormRequest
             'variants' => 'الأنواع',
             'variants.*.property' => 'النوع,الحجم',
             'variants.*.price' => 'سعر النوع',
+            'variants.*.is_dollar' => 'حالة السعر بالدولار',
             'variants.*.stock' => 'مخزون النوع',
         ];
     }
@@ -61,6 +63,7 @@ class StoreProductRequest extends FormRequest
             'variants.*.price.required' => 'حقل سعر النوع مطلوب لكل نوع.',
             'variants.*.price.numeric' => 'حقل سعر النوع يجب أن يكون رقماً لكل نوع.',
             'variants.*.price.min' => 'حقل سعر النوع يجب أن يكون على الأقل :min لكل نوع.',
+            'variants.*.is_dollar.boolean' => 'حقل حالة السعر بالدولار يجب أن يكون صحيحاً أو خاطئاً.',
             'variants.*.stock.required' => 'حقل مخزون النوع مطلوب لكل نوع.',
             'variants.*.stock.integer' => 'حقل مخزون النوع يجب أن يكون عدداً صحيحاً لكل نوع.',
             'variants.*.stock.min' => 'حقل مخزون النوع يجب أن يكون على الأقل :min لكل نوع.',

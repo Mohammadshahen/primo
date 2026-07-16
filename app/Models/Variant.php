@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Offer;
+use Illuminate\Support\Facades\Auth;
 
 class Variant extends Model
 {
@@ -12,9 +12,14 @@ class Variant extends Model
     protected $fillable = [
         'product_id',
         'price',
+        'is_dollar',
         'stock',
         'property',
         'is_active',
+    ];
+
+    protected $casts = [
+        'is_dollar' => 'boolean',
     ];
 
     // protected $appends = [
@@ -47,6 +52,24 @@ class Variant extends Model
     public function getOfferIdAttribute(): ?int
     {
         return $this->activeOffer?->id;
+    }
+
+    public function getPriceAttribute($value): float
+    {
+        $basePrice = (float) ($value ?? 0);
+
+        if (! $this->is_dollar || $this->shouldShowAdminPrice()) {
+            return $basePrice;
+        }
+
+        $dollarValue = (float) Setting::getValue('dollar_value', 1.0);
+
+        return round($basePrice * $dollarValue, 2);
+    }
+
+    protected function shouldShowAdminPrice(): bool
+    {
+        return Auth::check() && (bool) Auth::user()?->is_admin;
     }
 
     public function scopeAvailable($query)

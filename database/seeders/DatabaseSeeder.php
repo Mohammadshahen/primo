@@ -35,10 +35,8 @@ class DatabaseSeeder extends Seeder
         'description' => 'nane',
         ]);
 
-        Setting::create([
-            'key_name' => 'delivery_price',
-            'value' => 100.0,
-        ]);
+        Setting::setValue('delivery_price', 100.0);
+        Setting::setValue('dollar_value', 1500.0);
 
         $this->call([
             CategoriesTableSeeder::class,
