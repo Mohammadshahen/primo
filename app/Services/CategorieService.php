@@ -64,14 +64,14 @@ class CategorieService extends Service
         }
     }
 
-    public function delete(Categorie $categorie): array
+    public function delete(Categorie $category): array
     {
         try {
-            if ($categorie->image) {
-                FileStorage::deleteFile($categorie->image);
+            if ($category->image) {
+                FileStorage::deleteFile($category->image);
             }
 
-            $categorie->delete();
+            $category->delete();
 
             return [
                 'success' => true,
@@ -79,11 +79,7 @@ class CategorieService extends Service
             ];
         } catch (Exception $e) {
             $this->logException($e, __METHOD__ . ' delete');
-
-            return [
-                'success' => false,
-                'message' => 'فشل حذف الفئة',
-            ];
+            $this->throwExceptionJson('فشل حذف الفئة', 500);
         }
     }
 }

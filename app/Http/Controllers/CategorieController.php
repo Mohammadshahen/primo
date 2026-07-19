@@ -52,9 +52,9 @@ class CategorieController extends Controller
         return $this->success($result['data'], 'تم تحديث الفئة بنجاح', 201);
     }
 
-    public function destroy(Categorie $categorie)
+    public function destroy(Categorie $category)
     {
-        $result = $this->service->delete($categorie);
+        $result = $this->service->delete($category);
 
         if (! $result['success']) {
             return $this->error($result['message'], 404);
