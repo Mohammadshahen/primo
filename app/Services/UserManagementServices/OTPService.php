@@ -1,19 +1,23 @@
 <?php
+
 namespace App\Services\UserManagementServices;
 
 use App\Models\OTPCode;
 use App\Services\UserManagementServices\WhatsAppService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class OTPService
 {
     protected $whatsAppService;
     protected $telegramService;
+    protected $smsService;
 
-    public function __construct(WhatsAppService $whatsAppService, TelegramService $telegramService)
+    public function __construct(WhatsAppService $whatsAppService, TelegramService $telegramService, SMSService $smsService)
     {
         $this->whatsAppService = $whatsAppService;
         $this->telegramService = $telegramService;
+        $this->smsService = $smsService;
     }
 
     /**
@@ -41,13 +45,28 @@ class OTPService
         ]);
 
         // $sent = $this->whatsAppService->sendOTP($phone, $otpCode, $type);
-        $sent = $this->telegramService->sendOTP($phone, $otpCode, $type);
+        $sent = $this->sendOTP($phone, $otpCode, $type);
 
         if (! $sent) {
-            throw new \Exception('فشل في إرسال كود التحقق');
+            Log::error('Failed to send OTP ' . "$sent", ['phone' => $phone, 'otp' => $otpCode]);
+            throw new \Exception('فشل 00في إرسال كود التحقق');
         }
 
         return $otpRecord;
+    }
+
+    /**
+     * Send OTP using the configured channel.
+     */
+    protected function sendOTP($phone, $otpCode, $type = 'register')
+    {
+        $channel = env('OTP_CHANNEL', 'telegram');
+
+        if ($channel === 'sms') {
+            return $this->smsService->sendOTP($phone, $otpCode, $type);
+        }
+
+        return $this->telegramService->sendOTP($phone, $otpCode, $type);
     }
 
     /**
