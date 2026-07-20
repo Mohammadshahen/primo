@@ -202,7 +202,7 @@ class UserManagementService extends Service
             $accessToken = $account->createToken(
                 'admin-access',
                 ['dashboard'],
-                now()->addMinutes(10)
+                now()->addMonths(1)
             )->plainTextToken;
 
             $refreshToken = $account->createToken(
