@@ -27,6 +27,14 @@ class DatabaseSeeder extends Seeder
             'is_admin' => true,
         ]);
 
+        User::factory()->create([
+            'name' => 'ADMIN',
+            'phone' => '+963996214763',
+            'phone_verified_at' => now(),
+            'password' => bcrypt('12345678'),
+            'is_admin' => true,
+        ]);
+
         Address::create([
         'name'=> 'store_address',
         'user_id' => 1,
