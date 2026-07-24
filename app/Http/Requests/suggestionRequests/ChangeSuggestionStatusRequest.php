@@ -24,7 +24,7 @@ class ChangeSuggestionStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'string', 'in:pending,approved,rejected'],
+            'status' => ['required', 'string', 'in:pending,approved,rejected,provided'],
         ];
     }
 
@@ -33,7 +33,7 @@ class ChangeSuggestionStatusRequest extends FormRequest
         return [
             'status.required' => 'حالة الاقتراح مطلوبة.',
             'status.string' => 'حالة الاقتراح يجب أن تكون نصًا.',
-            'status.in' => 'حالة الاقتراح يجب أن تكون واحدة من: pending, approved, rejected.',
+            'status.in' => 'حالة الاقتراح يجب أن تكون واحدة من: pending, approved, rejected, provided.',
         ];
     } 
 }

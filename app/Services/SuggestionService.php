@@ -62,12 +62,20 @@ class SuggestionService extends Service
             $suggestion->status = $status;
             $suggestion->save();
 
-            // If admin accepted the suggestion, notify the suggestion owner
+            // If admin accepted or provided the suggestion, notify the suggestion owner
             if ($status === 'approved') {
                 try {
                     $this->notificationService->notifictionSuggestionAcceptedForUser($suggestion);
                 } catch (Exception $e) {
                     $this->logException($e, __METHOD__ . ' notify user on suggestion accepted');
+                }
+            }
+
+            if ($status === 'provided') {
+                try {
+                    $this->notificationService->notifictionSuggestionProvidedForUser($suggestion);
+                } catch (Exception $e) {
+                    $this->logException($e, __METHOD__ . ' notify user on suggestion provided');
                 }
             }
 
