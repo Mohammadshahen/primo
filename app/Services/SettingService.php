@@ -82,6 +82,7 @@ class SettingService extends Service
 
             $keys = [
                 'facebook_account',
+                'instagram_account',
                 'admin_phone',
                 'customer_service_phone',
                 'working_hours',
@@ -118,6 +119,7 @@ class SettingService extends Service
         try {
             $keys = [
                 'facebook_account',
+                'instagram_account',
                 'admin_phone',
                 'customer_service_phone',
                 'working_hours',

@@ -15,6 +15,7 @@ class UpdateGeneralSettingsRequest extends FormRequest
     {
         return [
             'facebook_account' => ['nullable', 'string', 'max:255'],
+            'instagram_account' => ['nullable', 'string', 'max:255'],
             'admin_phone' => ['nullable', 'string', 'max:50'],
             'customer_service_phone' => ['nullable', 'string', 'max:50'],
             'working_hours' => ['nullable', 'string', 'max:255'],
@@ -27,6 +28,7 @@ class UpdateGeneralSettingsRequest extends FormRequest
     {
         return [
             'facebook_account' => 'حساب فيسبوك',
+            'instagram_account' => 'حساب انستغرام',
             'admin_phone' => 'رقم الادارة',
             'customer_service_phone' => 'رقم خدمة الزبائن',
             'working_hours' => 'أوقات العمل',
