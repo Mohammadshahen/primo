@@ -142,4 +142,20 @@ class NotificationService
             ]
         );
     }
+
+    public function notifictionSuggestionProvidedForUser(Suggestion $suggestion)
+    {
+        if (! $suggestion->user) {
+            return;
+        }
+
+        return $this->fcmService->sendToUser(
+            $suggestion->user,
+            'تم توفير المنتج الذي اقترحته',
+            "تم توفير المنتج الذي اقترحته: {$suggestion->name}",
+            [
+                'suggestion_id' => $suggestion->id,
+            ]
+        );
+    }
 }
