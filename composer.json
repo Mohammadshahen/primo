@@ -10,7 +10,8 @@
         "google/auth": "^1.52",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.3",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "teampickr/php-google-maps-distance-matrix": "^0.6.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
