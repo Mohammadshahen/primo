@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\OfferCreatedNotificationJob;
 use App\Models\Offer;
+use App\Models\Setting;
 use App\Models\Variant;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,13 @@ class OfferService extends Service
                 (float) $variant->price * ((float) $data['discount_percentage'] / 100),
                 2
             );
+            
+            if ($variant->is_dollar) {
+                $dollarRate = (float) Setting::getValue('dollar_rate', 0);
+                if ($dollarRate > 0) {
+                    $data['discount_value'] = round($data['discount_value'] * $dollarRate, 2);
+                }
+            }
         }
 
         return $data;
