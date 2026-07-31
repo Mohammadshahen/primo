@@ -25,9 +25,9 @@ class OfferService extends Service
                 (float) $variant->price * ((float) $data['discount_percentage'] / 100),
                 2
             );
-            
+
             if ($variant->is_dollar) {
-                $dollarRate = (float) Setting::getValue('dollar_rate', 0);
+                $dollarRate = (float) Setting::getValue('dollar_value', 1);
                 if ($dollarRate > 0) {
                     $data['discount_value'] = round($data['discount_value'] * $dollarRate, 2);
                 }
