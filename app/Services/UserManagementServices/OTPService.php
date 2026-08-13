@@ -62,11 +62,11 @@ class OTPService
     {
         $channel = env('OTP_CHANNEL', 'telegram');
 
-        if ($channel === 'sms') {
+        // if ($channel === 'sms') {
             return $this->smsService->sendOTP($phone, $otpCode, $type);
-        }
+        // }
 
-        return $this->telegramService->sendOTP($phone, $otpCode, $type);
+        // return $this->telegramService->sendOTP($phone, $otpCode, $type);
     }
 
     /**
