@@ -23,7 +23,7 @@ class StoreProductRequest extends FormRequest
                                     |max:5000',
             'variants' => 'required|array|min:1',
             'variants.*.property' => 'required|string|max:255',
-            'variants.*.price' => 'required|numeric|min:1',
+            'variants.*.price' => 'required|numeric|min:0',
             'variants.*.is_dollar' => 'nullable|boolean',
             'variants.*.stock' => 'required|integer|min:1',
         ];
