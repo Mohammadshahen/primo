@@ -54,6 +54,28 @@ In order to ensure that the Laravel community is welcoming to all, please review
 
 If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
+## Bayan Product Sync
+
+Products and categories remain manually managed in this application. Set `bayan_id` on each matching manual variant through the admin product create/update API. `GET /api/admin/bayan/variants/unlinked` lists Bayan `Kind=0` rows that are not linked yet; `Kind=1` rows are ignored. Each Bayan item ID can be linked to only one local variant.
+
+`bayan:sync-products` updates the price from `BAYAN_PRICE_FIELD` (default `Price4`), name/property, stock and currency on linked variants only. `CURRENCY=2` maps to `is_dollar=true`; negative stock is clamped to zero. Linked variants absent from a valid non-empty source snapshot are deactivated. If they return later, only variants marked unavailable by this sync are reactivated. An empty or malformed response fails without changing availability. Manual products, categories, images, descriptions, SKUs, and unlinked variants are not created or changed by the sync.
+
+Optional `note` text can be sent when adding/updating a cart item. It is copied to `ordar_itams.note` on order confirmation and returned in order details.
+
+The sync is scheduled hourly. Configure the system scheduler to invoke Laravel every minute:
+
+```sh
+php artisan migrate
+php artisan bayan:sync-products --dry-run
+php artisan bayan:sync-products
+```
+
+Cron entry:
+
+```cron
+* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1
+```
+
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

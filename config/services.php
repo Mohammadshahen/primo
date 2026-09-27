@@ -41,4 +41,12 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    'bayan' => [
+        'products_url' => env('BAYAN_PRODUCTS_URL', 'https://primo.bayanapi.uk/getProducts'),
+        'token' => env('BAYAN_API_TOKEN'),
+        'page_size' => (int) env('BAYAN_PAGE_SIZE', 200),
+        'timeout' => (int) env('BAYAN_TIMEOUT', 30),
+        'price_field' => env('BAYAN_PRICE_FIELD', 'Price4'),
+    ],
+
 ];

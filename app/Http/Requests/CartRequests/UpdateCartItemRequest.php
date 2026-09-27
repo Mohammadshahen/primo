@@ -15,6 +15,7 @@ class UpdateCartItemRequest extends FormRequest
     {
         return [
             'count' => 'required|integer|min:1',
+            'note' => 'nullable|string|max:2000',
         ];
     }
 
@@ -22,6 +23,7 @@ class UpdateCartItemRequest extends FormRequest
     {
         return [
             'count' => 'الكمية',
+            'note' => 'ملاحظة المنتج',
         ];
     }
 

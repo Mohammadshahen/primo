@@ -14,7 +14,7 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => 'required|integer|exists:categories,id',
+            'category_id' => 'nullable|integer|exists:categories,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image
@@ -26,6 +26,8 @@ class StoreProductRequest extends FormRequest
             'variants.*.price' => 'required|numeric|min:0',
             'variants.*.is_dollar' => 'nullable|boolean',
             'variants.*.stock' => 'required|integer|min:1',
+            'variants.*.bayan_id' => 'nullable|integer|unique:variants,bayan_id',
+            'variants.*.bayan_variant_key' => 'nullable|string|size:64|unique:variants,bayan_variant_key',
         ];
     }
 
@@ -41,6 +43,8 @@ class StoreProductRequest extends FormRequest
             'variants.*.price' => 'سعر النوع',
             'variants.*.is_dollar' => 'حالة السعر بالدولار',
             'variants.*.stock' => 'مخزون النوع',
+            'variants.*.bayan_id' => 'معرف البيان',
+            'variants.*.bayan_variant_key' => 'مفتاح نوع البيان',
         ];
     }
 

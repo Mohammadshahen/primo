@@ -12,6 +12,7 @@ class Cart extends Model
         'user_id',
         'variant_id',
         'count',
+        'note',
     ];
 
     protected $casts = [

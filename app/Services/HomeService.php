@@ -64,7 +64,7 @@ class HomeService extends Service
         })->map(function ($product) {
             return [
                 'id' => $product->id,
-                'category_name' => $product->category->name,
+                'category_name' => $product->category?->name,
                 'name' => $product->name,
                 'image' => $product->image,
                 'price' => $product->variants->first()->price ?? null,

@@ -93,7 +93,12 @@ class CartService extends Service
                     'user_id' => $user->id,
                     'variant_id' => $variant->id,
                     'count' => $count,
+                    'note' => $data['note'] ?? null,
                 ]);
+            }
+
+            if ($cartItem && array_key_exists('note', $data)) {
+                $cartItem->update(['note' => $data['note']]);
             }
 
             DB::commit();
@@ -146,7 +151,10 @@ class CartService extends Service
                 ];
             }
 
-            $cart->update(['count' => $count]);
+            $cart->update(array_filter([
+                'count' => $count,
+                'note' => array_key_exists('note', $data) ? $data['note'] : null,
+            ], fn ($value, $key) => $key === 'count' || array_key_exists('note', $data), ARRAY_FILTER_USE_BOTH));
 
             return [
                 'success' => true,
@@ -205,6 +213,7 @@ class CartService extends Service
             'variant_property' => $variant?->property,
             'variant_price' => (float) $variant?->price,
             'quantity' => (int) $item->count,
+            'note' => $item->note,
             'has_active_offer' => (bool) $variant?->has_active_offer,
             'discount_amount' => (float) ($variant?->has_active_offer ? $variant?->activeOffer->discount_value : 0),
             'new_price' => (float) ($variant?->price - ($variant?->has_active_offer ? $variant?->activeOffer->discount_value : 0)),

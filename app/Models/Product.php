@@ -16,6 +16,7 @@ class Product extends Model
         'sku_code',
         'is_active',
     ];
+
     protected $casts = [
         'is_active' => 'boolean',
     ];

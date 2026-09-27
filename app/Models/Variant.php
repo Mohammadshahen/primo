@@ -11,6 +11,10 @@ class Variant extends Model
 
     protected $fillable = [
         'product_id',
+        'bayan_id',
+        'bayan_variant_key',
+        'bayan_currency_id',
+        'bayan_unavailable',
         'price',
         'is_dollar',
         'stock',
@@ -20,6 +24,7 @@ class Variant extends Model
 
     protected $casts = [
         'is_dollar' => 'boolean',
+        'bayan_unavailable' => 'boolean',
     ];
 
     // protected $appends = [

@@ -16,6 +16,7 @@ class AddCartItemRequest extends FormRequest
         return [
             'variant_id' => 'required|integer|exists:variants,id',
             'count' => 'nullable|integer|min:1',
+            'note' => 'nullable|string|max:2000',
         ];
     }
 
@@ -24,6 +25,7 @@ class AddCartItemRequest extends FormRequest
         return [
             'variant_id' => 'النوع',
             'count' => 'الكمية',
+            'note' => 'ملاحظة المنتج',
         ];
     }
 

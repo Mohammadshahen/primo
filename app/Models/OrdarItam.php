@@ -12,6 +12,7 @@ class OrdarItam extends Model
         'ordar_id',
         'variant_id',
         'count',
+        'note',
     ];
 
     protected $casts = [

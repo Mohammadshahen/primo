@@ -41,6 +41,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('offers', OfferController::class);
 
     Route::apiResource('products', ProductController::class);
+    Route::get('bayan/variants/unlinked', [ProductController::class, 'unlinkedBayanVariants'])->name('admin.bayan.variants.unlinked');
 
 
     Route::get('ordars', [OrdarController::class, 'getAllOrdar'])->name('admin.ordars.index');

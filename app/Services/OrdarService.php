@@ -103,6 +103,7 @@ class OrdarService extends Service
                     'ordar_id' => $ordar->id,
                     'variant_id' => $item->variant_id,
                     'count' => $item->count,
+                    'note' => $item->note,
                 ]);
 
 
@@ -186,6 +187,7 @@ class OrdarService extends Service
                         $product = $variant->product;
                         return [
                             'image' => $product->image,
+                            'note' => $item->note,
                         ];
                     });
                     return $ordar;
@@ -226,6 +228,7 @@ class OrdarService extends Service
                     'quantity' => $item->count,
                     'property' => $variant->property,
                     'price' => $variant->price,
+                    'note' => $item->note,
                     'has_active_offer' => $variant->has_active_offer,
                     'new_price' => $variant->has_active_offer ? $variant->price - $variant->offer->discount_value : null,
 

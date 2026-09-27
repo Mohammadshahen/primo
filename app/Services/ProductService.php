@@ -39,7 +39,7 @@ class ProductService extends Service
             $product->load(['category:id,name', 'variants', 'variants.activeOffer', 'ratings']);
             $data = [
                 'id' => $product->id,
-                'category_name' => $product->category->name,
+                'category_name' => $product->category?->name,
                 'name' => $product->name,
                 'image' => $product->image,
                 'description' => $product->description,
@@ -81,7 +81,7 @@ class ProductService extends Service
         try {
             DB::beginTransaction();
             $product = Product::create([
-                'category_id' => $data['category_id'],
+                'category_id' => $data['category_id'] ?? null,
                 'name' => $data['name'],
                 'image' => isset($data['image']) ? FileStorage::storeFile($data['image'], 'products', 'img') : null,
                 'description' => $data['description'] ?? null,
@@ -95,6 +95,8 @@ class ProductService extends Service
                     'stock' => $variantData['stock'] ?? 1,
                     'property' => $variantData['property'] ?? null,
                     'is_active' => true,
+                    'bayan_id' => $variantData['bayan_id'] ?? null,
+                    'bayan_variant_key' => $variantData['bayan_variant_key'] ?? null,
                 ]);
             }
 
@@ -131,6 +133,9 @@ class ProductService extends Service
                             'stock' => $variantData['stock'] ?? $variant->stock,
                             'property' => $variantData['property'] ?? $variant->property,
                             'is_active' => $variantData['is_active'] ?? $variant->is_active,
+                            'bayan_id' => array_key_exists('bayan_id', $variantData) ? $variantData['bayan_id'] : $variant->bayan_id,
+                            'bayan_variant_key' => array_key_exists('bayan_variant_key', $variantData) ? $variantData['bayan_variant_key'] : $variant->bayan_variant_key,
+                            'bayan_unavailable' => array_key_exists('is_active', $variantData) ? false : $variant->bayan_unavailable,
                         ]);
                     }
                 }
@@ -144,6 +149,8 @@ class ProductService extends Service
                         'stock' => $variantData['stock'] ?? 1,
                         'property' => $variantData['property'] ?? null,
                         'is_active' => true,
+                        'bayan_id' => $variantData['bayan_id'] ?? null,
+                        'bayan_variant_key' => $variantData['bayan_variant_key'] ?? null,
                     ]);
                 }
             }
@@ -160,7 +167,7 @@ class ProductService extends Service
             }
 
             $product->update([
-                'category_id' => $data['category_id'] ?? $product->category_id,
+                'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $product->category_id,
                 'name' => $data['name'] ?? $product->name,
                 'image' => isset($data['image'])
                     ? FileStorage::fileExists($data['image'], $product->image, 'products', 'img')
