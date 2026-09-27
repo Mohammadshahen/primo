@@ -10,6 +10,7 @@ use App\Http\Controllers\OrdarController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SuggestionController;
+use App\Http\Controllers\VariantController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\GeneralSettingController;
 use App\Http\Controllers\UserManagementController;
@@ -41,6 +42,8 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('offers', OfferController::class);
 
     Route::apiResource('products', ProductController::class);
+    Route::get('variants', [VariantController::class, 'index'])->name('admin.variants.index');
+    Route::patch('variants/{variant}/toggle-active', [VariantController::class, 'toggleActive'])->name('admin.variants.toggle-active');
     Route::get('bayan/variants/unlinked', [ProductController::class, 'unlinkedBayanVariants'])->name('admin.bayan.variants.unlinked');
 
 

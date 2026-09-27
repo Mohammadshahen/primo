@@ -261,6 +261,14 @@ class BayanProductSyncTest extends TestCase
             'property' => 'موجود',
             'is_active' => true,
         ]);
+        $variantToDetach = Variant::create([
+            'product_id' => $targetProduct->id,
+            'price' => 1.5,
+            'is_dollar' => false,
+            'stock' => 2,
+            'property' => 'يفك ربطه',
+            'is_active' => true,
+        ]);
         $variantCount = Variant::count();
 
         $this->actingAs($admin, 'sanctum')
@@ -270,6 +278,7 @@ class BayanProductSyncTest extends TestCase
             ->assertOk();
 
         $this->assertSame($targetProduct->id, $variant->fresh()->product_id);
+        $this->assertNull($variantToDetach->fresh()->product_id);
         $this->assertSame($variantCount, Variant::count());
 
         $this->actingAs($admin, 'sanctum')
@@ -305,6 +314,61 @@ class BayanProductSyncTest extends TestCase
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
         $this->assertDatabaseHas('variants', ['id' => $variant->id, 'product_id' => null]);
         $this->assertSame(1, Variant::count());
+    }
+
+    public function test_admin_can_filter_search_and_toggle_variants(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $regularUser = User::factory()->create(['is_admin' => false]);
+        $product = Product::create(['name' => 'مشروب كولا', 'sku_code' => 'VARIANT-API-1']);
+        $linkedVariant = Variant::create([
+            'product_id' => $product->id,
+            'price' => 1,
+            'is_dollar' => false,
+            'stock' => 4,
+            'property' => 'حجم صغير',
+            'is_active' => true,
+        ]);
+        $unlinkedVariant = Variant::create([
+            'product_id' => null,
+            'bayan_id' => 990,
+            'price' => 1.5,
+            'is_dollar' => false,
+            'stock' => 0,
+            'property' => 'كولا زيرو',
+            'is_active' => false,
+            'bayan_unavailable' => true,
+        ]);
+
+        $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/admin/variants?linked=0&search=زيرو')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $unlinkedVariant->id)
+            ->assertJsonPath('data.0.product_name', null);
+
+        $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/admin/variants?linked=1&search=كولا')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $linkedVariant->id)
+            ->assertJsonPath('data.0.product_name', 'مشروب كولا');
+
+        $this->actingAs($admin, 'sanctum')
+            ->patchJson('/api/admin/variants/'.$unlinkedVariant->id.'/toggle-active')
+            ->assertOk()
+            ->assertJsonPath('data.is_active', true);
+
+        $this->assertFalse($unlinkedVariant->fresh()->bayan_unavailable);
+
+        $this->actingAs($admin, 'sanctum')
+            ->patchJson('/api/admin/variants/'.$unlinkedVariant->id.'/toggle-active')
+            ->assertOk()
+            ->assertJsonPath('data.is_active', false);
+
+        $this->actingAs($regularUser, 'sanctum')
+            ->getJson('/api/admin/variants')
+            ->assertForbidden();
     }
 
     public function test_cart_item_note_is_persisted_and_returned(): void

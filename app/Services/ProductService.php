@@ -115,7 +115,13 @@ class ProductService extends Service
 
 
             if (array_key_exists('variant_ids', $data)) {
-                Variant::whereIn('id', $data['variant_ids'] ?? [])
+                $variantIds = $data['variant_ids'];
+
+                Variant::where('product_id', $product->id)
+                    ->whereNotIn('id', $variantIds)
+                    ->update(['product_id' => null]);
+
+                Variant::whereIn('id', $variantIds)
                     ->update(['product_id' => $product->id]);
             }
             $productStatus = $data['is_active'] ?? $product->is_active;

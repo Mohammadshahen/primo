@@ -25,7 +25,7 @@ class UpdateProductRequest extends FormRequest
                                     |mimetypes:image/jpeg,image/png,image/jpg
                                     |max:5000',
 
-            'variant_ids' => 'nullable|array',
+            'variant_ids' => 'sometimes|array',
             'variant_ids.*' => 'required|integer|distinct|exists:variants,id',
             'add_variants' => 'prohibited',
             'update_variants' => 'prohibited',
