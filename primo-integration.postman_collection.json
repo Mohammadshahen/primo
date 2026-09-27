@@ -1,0 +1,299 @@
+{
+  "info": {
+    "_postman_id": "b2cf70ab-25e9-4c77-9df0-13be246c7401",
+    "name": "Primo Product, Variant & Order Integration",
+    "description": "مجموعة Postman للواجهات التي تأثرت بتكامل Bayan: إدارة المنتجات وربط variant_ids الموجودة فقط، إدارة variants، عناصر Bayan غير المرتبطة، ملاحظات السلة، وتسعير/تأكيد الطلب. عيّن base_url وadmin_token وuser_token من Environment قبل الاستخدام. إنشاء/تحديث المنتج لا ينشئ variants جديدة؛ variant_ids في PATCH تمثل المجموعة النهائية، والعناصر المحذوفة من المصفوفة يصبح product_id لها null.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{admin_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost", "type": "string" },
+    { "key": "admin_token", "value": "", "type": "string" },
+    { "key": "user_token", "value": "", "type": "string" },
+    { "key": "product_id", "value": "1", "type": "string" },
+    { "key": "variant_id", "value": "1", "type": "string" },
+    { "key": "cart_id", "value": "1", "type": "string" },
+    { "key": "order_id", "value": "1", "type": "string" },
+    { "key": "address_id", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Admin - Products",
+      "description": "إدارة المنتجات اليدوية. الـ variants الموجودة تُربط عبر variant_ids، ولا تُنشأ variants من طلب المنتج.",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/products",
+            "description": "جلب قائمة المنتجات الإدارية. يتطلب admin_token."
+          }
+        },
+        {
+          "name": "Get Product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/products/{{product_id}}",
+            "description": "جلب تفاصيل منتج واحد مع variants المرتبطة به."
+          }
+        },
+        {
+          "name": "Create Product with Existing Variants",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": null,\n  \"name\": \"منتج جديد\",\n  \"description\": \"وصف المنتج\",\n  \"variant_ids\": [1, 2]\n}"
+            },
+            "url": "{{base_url}}/api/admin/products",
+            "description": "ينشئ Product ويربط variant_ids الموجودة به. كل ID يجب أن يكون موجودًا وغير مكرر. لا يرسل هذا الطلب بيانات variant ولا ينشئ variant جديدًا. category_id اختياري. متوقع 201."
+          }
+        },
+        {
+          "name": "Update Product and Set Variant Links",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"اسم المنتج بعد التعديل\",\n  \"variant_ids\": [1, 2]\n}"
+            },
+            "url": "{{base_url}}/api/admin/products/{{product_id}}",
+            "description": "تحديث بيانات المنتج وربط مجموعة variants الحالية. variant_ids تمثل المجموعة النهائية: أي variant مرتبط حاليًا بالمنتج وغير موجود في المصفوفة يُفك ربطه ويصبح product_id=null. غياب الحقل يعني عدم تغيير الروابط، وإرساله كمصفوفة فارغة يفك جميع الروابط. حقلا add_variants وupdate_variants مرفوضان."
+          }
+        },
+        {
+          "name": "Update Product without Changing Variant Links",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"اسم جديد فقط\",\n  \"description\": \"تحديث بيانات المنتج دون تغيير ربط الأنواع\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/products/{{product_id}}",
+            "description": "مثال لتحديث خصائص المنتج مع ترك variant_ids غير مرسل، وبالتالي تبقى الروابط كما هي."
+          }
+        },
+        {
+          "name": "Delete Product (Preserve Variants)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/products/{{product_id}}",
+            "description": "يحذف المنتج ويُبقي variants التابعة له؛ قاعدة البيانات تضبط product_id لديها إلى null."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Variants",
+      "description": "استعراض جميع variants مع فلتر الربط والبحث، وتبديل is_active. يتطلب admin_token.",
+      "item": [
+        {
+          "name": "List All Variants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/variants?per_page=50&page=1",
+            "description": "قائمة paginated لكل variants؛ الاستجابة تحتوي data وmeta."
+          }
+        },
+        {
+          "name": "List Linked Variants by Search",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/variants?linked=1&search=كولا&per_page=50&page=1",
+            "description": "linked=1 يعرض variants المرتبطة بمنتج. search يبحث في property واسم المنتج المرتبط."
+          }
+        },
+        {
+          "name": "List Unlinked Variants by Search",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/variants?linked=0&search=زيرو&per_page=50&page=1",
+            "description": "linked=0 يعرض variants ذات product_id=null. يمكن حذف search لعرض جميع غير المرتبطة."
+          }
+        },
+        {
+          "name": "Toggle Variant Active Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/admin/variants/{{variant_id}}/toggle-active",
+            "description": "يعكس قيمة is_active للـ variant، ويزيل علامة bayan_unavailable حتى لا تعيد المزامنة تفعيل/تعطيل حالة غيّرها المشرف. لا يحتاج body. كل إرسال يبدّل الحالة مرة واحدة."
+          }
+        },
+        {
+          "name": "Delete Variant",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/variants/{{variant_id}}/delete",
+            "description": "حذف variant نهائيًا؛ على عكس حذف المنتج، هذا المسار يحذف variant نفسه."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Bayan Linking",
+      "description": "استعراض صفوف Bayan Kind=0 التي لم تُربط بعد بvariant يدوي.",
+      "item": [
+        {
+          "name": "List Unlinked Bayan Items",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/bayan/variants/unlinked",
+            "description": "يعرض bayan_id وbayan_variant_key والاسم والسعر والمخزون والعملة. استخدم bayan_id وbayan_variant_key عند ربط Variant موجود من خلال إنشاء/تحديث Product. لا ينشئ هذا المسار products أو variants."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User - Cart and Order Notes",
+      "description": "واجهات المستخدم لإضافة/تعديل ملاحظة كل عنصر في السلة، ثم تأكيد الطلب وقراءة الملاحظة المحفوظة في order item.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{user_token}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/cart",
+            "description": "جلب السلة؛ كل عنصر يعرض note إن وجدت."
+          }
+        },
+        {
+          "name": "Add Variant to Cart with Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variant_id\": 1,\n  \"count\": 1,\n  \"note\": \"بدون سكر\"\n}"
+            },
+            "url": "{{base_url}}/api/user/cart",
+            "description": "إضافة variant للسلة مع ملاحظة اختيارية حتى 2000 حرف. متوقع 201."
+          }
+        },
+        {
+          "name": "Update Cart Count and Note",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"count\": 2,\n  \"note\": \"الصلصة على الجانب\"\n}"
+            },
+            "url": "{{base_url}}/api/user/cart/{{cart_id}}",
+            "description": "تحديث الكمية والملاحظة. اترك note خارج الطلب إذا أردت إبقاء الملاحظة الحالية."
+          }
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/cart/{{cart_id}}",
+            "description": "حذف عنصر من سلة المستخدم الحالي."
+          }
+        },
+        {
+          "name": "Calculate Order Price",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_delivery\": false\n}"
+            },
+            "url": "{{base_url}}/api/user/ordar/price",
+            "description": "حساب إجمالي السلة قبل التأكيد. عند is_delivery=true أرسل address_id."
+          }
+        },
+        {
+          "name": "Confirm Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_delivery\": false\n}"
+            },
+            "url": "{{base_url}}/api/user/ordar/confirme",
+            "description": "يؤكد الطلب وينقل ملاحظة كل cart item إلى ordar_itams.note. للتوصيل أرسل is_delivery=true وaddress_id."
+          }
+        },
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/ordars",
+            "description": "جلب طلبات المستخدم؛ عناصر الطلب تتضمن ملاحظاتها."
+          }
+        },
+        {
+          "name": "Get My Order Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/ordars/{{order_id}}",
+            "description": "تفاصيل الطلب وعناصره، بما فيها note المحفوظة لكل عنصر."
+          }
+        },
+        {
+          "name": "Get Product Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/user/products/{{product_id}}",
+            "description": "جلب المنتج للمستخدم مع variants المرتبطة به."
+          }
+        }
+      ]
+    }
+  ]
+}

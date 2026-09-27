@@ -145,6 +145,9 @@ class ProductService extends Service
                 'description' => $data['description'] ?? $product->description,
                 'is_active' => $productStatus,
             ]);
+            if (array_key_exists('is_active', $data)) {
+                $product->forceFill(['bayan_auto_disabled' => false])->save();
+            }
 
             DB::commit();
             return [
@@ -202,7 +205,10 @@ class ProductService extends Service
             }
         }
         try {
-            $product->update(['is_active' => $productStatus]);
+            $product->forceFill([
+                'is_active' => $productStatus,
+                'bayan_auto_disabled' => false,
+            ])->save();
 
             return [
                 'success' => true,

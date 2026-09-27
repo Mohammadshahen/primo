@@ -42,7 +42,7 @@ class AddressesTableSeeder extends Seeder
                 Address::firstOrCreate([
                     'user_id' => $user->id,
                     'name' => $addressData['name'],
-                ], $addressData);
+                ], array_merge($addressData, ['phone' => $user->phone]));
             }
         }
     }

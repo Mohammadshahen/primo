@@ -32,6 +32,7 @@ class BayanProductSyncService
         }
 
         $counts = [
+            'variants_created' => 0,
             'variants_updated' => 0,
             'variants_deactivated' => 0,
             'negative_stock_variants' => 0,
@@ -54,6 +55,11 @@ class BayanProductSyncService
                     }
                 });
 
+            foreach (array_chunk(array_keys($sourceVariants), $this->upsertChunkSize()) as $sourceIds) {
+                $existingCount = DB::table('variants')->whereIn('bayan_id', $sourceIds)->count();
+                $counts['variants_created'] += count($sourceIds) - $existingCount;
+            }
+
             return $counts + [
                 'records_received' => $recordsReceived,
                 'source_variants' => count($sourceVariants),
@@ -63,6 +69,7 @@ class BayanProductSyncService
 
         DB::transaction(function () use ($sourceVariants, $priceField, &$counts): void {
             $this->applySourceSnapshot($sourceVariants, $priceField, $counts);
+            $this->syncProductAvailability();
         });
 
         if ($counts['negative_stock_variants'] > 0) {
@@ -76,7 +83,7 @@ class BayanProductSyncService
             'source_variants' => count($sourceVariants),
             'dry_run' => false,
         ];
-        Log::info('Bayan linked variant sync completed.', $result);
+        Log::info('Bayan variant sync completed.', $result);
 
         return $result;
     }
@@ -125,85 +132,20 @@ class BayanProductSyncService
             ->whereNotNull('bayan_id')
             ->select([
                 'id',
-                'product_id',
                 'bayan_id',
-                'price',
-                'stock',
-                'is_dollar',
-                'bayan_currency_id',
-                'property',
-                'bayan_variant_key',
                 'is_active',
-                'bayan_unavailable',
             ])
-            ->chunkById(self::DB_CHUNK_SIZE, function ($linkedVariants) use ($sourceVariants, $priceField, &$counts): void {
-                $updates = [];
+            ->chunkById(self::DB_CHUNK_SIZE, function ($linkedVariants) use ($sourceVariants, &$counts): void {
                 $deactivateIds = [];
                 $timestamp = now();
 
                 foreach ($linkedVariants as $variant) {
                     $counts['linked_variants']++;
                     $bayanId = (int) $variant->bayan_id;
-                    if (! isset($sourceVariants[$bayanId])) {
-                        if ($variant->is_active) {
-                            $deactivateIds[] = $variant->id;
-                            $counts['variants_deactivated']++;
-                        }
-
-                        continue;
+                    if (! isset($sourceVariants[$bayanId]) && $variant->is_active) {
+                        $deactivateIds[] = $variant->id;
+                        $counts['variants_deactivated']++;
                     }
-
-                    $record = $sourceVariants[$bayanId];
-                    $sourceStock = $record['Quantity'];
-                    $newPrice = round($record[$priceField], 3);
-                    $newStock = max(0, $sourceStock);
-                    $newIsDollar = $record['CURRENCY'] === 2;
-                    $newCurrencyId = $record['CURRENCY'];
-                    $newProperty = $record['Name'];
-                    $newVariantKey = $record['bayan_variant_key'];
-                    $hasChanges = number_format((float) $variant->price, 3, '.', '')
-                        !== number_format($newPrice, 3, '.', '')
-                    || (int) $variant->stock !== $newStock
-                    || (bool) $variant->is_dollar !== $newIsDollar
-                    || (int) $variant->bayan_currency_id !== $newCurrencyId
-                    || $variant->property !== $newProperty
-                    || $variant->bayan_variant_key !== $newVariantKey
-                    || (bool) $variant->bayan_unavailable;
-
-                    if (! $hasChanges) {
-                        continue;
-                    }
-
-                    $updates[] = [
-                        'id' => $variant->id,
-                        'product_id' => $variant->product_id,
-                        'bayan_id' => $bayanId,
-                        'price' => $newPrice,
-                        'stock' => $newStock,
-                        'is_dollar' => $newIsDollar,
-                        'bayan_currency_id' => $newCurrencyId,
-                        'property' => $newProperty,
-                        'bayan_variant_key' => $newVariantKey,
-                        'is_active' => $variant->bayan_unavailable ? true : (bool) $variant->is_active,
-                        'bayan_unavailable' => false,
-                        'updated_at' => $timestamp,
-                    ];
-                    $counts['variants_updated']++;
-                    $counts['negative_stock_variants'] += $sourceStock < 0 ? 1 : 0;
-                }
-
-                foreach (array_chunk($updates, $this->upsertChunkSize()) as $updateChunk) {
-                    Variant::upsert($updateChunk, ['bayan_id'], [
-                        'price',
-                        'stock',
-                        'is_dollar',
-                        'bayan_currency_id',
-                        'property',
-                        'bayan_variant_key',
-                        'is_active',
-                        'bayan_unavailable',
-                        'updated_at',
-                    ]);
                 }
 
                 if ($deactivateIds !== []) {
@@ -214,6 +156,125 @@ class BayanProductSyncService
                     ]);
                 }
             });
+
+        foreach (array_chunk($sourceVariants, $this->upsertChunkSize(), true) as $sourceChunk) {
+            $existingVariants = DB::table('variants')
+                ->whereIn('bayan_id', array_keys($sourceChunk))
+                ->get([
+                    'bayan_id',
+                    'price',
+                    'stock',
+                    'is_dollar',
+                    'bayan_currency_id',
+                    'property',
+                    'bayan_variant_key',
+                    'is_active',
+                    'bayan_unavailable',
+                ])
+                ->keyBy('bayan_id');
+            $upserts = [];
+            $timestamp = now();
+
+            foreach ($sourceChunk as $bayanId => $record) {
+                $existing = $existingVariants->get($bayanId);
+                $sourceStock = $record['Quantity'];
+                $newPrice = round($record[$priceField], 3);
+                $newStock = max(0, $sourceStock);
+                $newIsDollar = $record['CURRENCY'] === 2;
+                $newCurrencyId = $record['CURRENCY'];
+                $newProperty = $record['Name'];
+                $newVariantKey = $record['bayan_variant_key'];
+                $newIsActive = $newStock > 0
+                    ? ($existing === null || $existing->bayan_unavailable ? true : (bool) $existing->is_active)
+                    : false;
+                $newBayanUnavailable = $newStock === 0;
+
+                if ($existing !== null) {
+                    $hasChanges = number_format((float) $existing->price, 3, '.', '')
+                        !== number_format($newPrice, 3, '.', '')
+                    || (int) $existing->stock !== $newStock
+                    || (bool) $existing->is_dollar !== $newIsDollar
+                    || (int) $existing->bayan_currency_id !== $newCurrencyId
+                    || $existing->property !== $newProperty
+                    || $existing->bayan_variant_key !== $newVariantKey
+                    || (bool) $existing->is_active !== $newIsActive
+                    || (bool) $existing->bayan_unavailable !== $newBayanUnavailable;
+
+                    if (! $hasChanges) {
+                        continue;
+                    }
+
+                    if ($existing->is_active && ! $newIsActive) {
+                        $counts['variants_deactivated']++;
+                    }
+                    $counts['variants_updated']++;
+                } else {
+                    $counts['variants_created']++;
+                }
+
+                $upserts[] = [
+                    'bayan_id' => $bayanId,
+                    'bayan_variant_key' => $newVariantKey,
+                    'bayan_currency_id' => $newCurrencyId,
+                    'price' => $newPrice,
+                    'stock' => $newStock,
+                    'is_dollar' => $newIsDollar,
+                    'property' => $newProperty,
+                    'is_active' => $newIsActive,
+                    'bayan_unavailable' => $newBayanUnavailable,
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+                $counts['negative_stock_variants'] += $sourceStock < 0 ? 1 : 0;
+            }
+
+            if ($upserts !== []) {
+                Variant::upsert($upserts, ['bayan_id'], [
+                    'price',
+                    'stock',
+                    'is_dollar',
+                    'bayan_currency_id',
+                    'property',
+                    'bayan_variant_key',
+                    'is_active',
+                    'bayan_unavailable',
+                    'updated_at',
+                ]);
+            }
+        }
+    }
+
+    private function syncProductAvailability(): void
+    {
+        $timestamp = now();
+
+        DB::table('products')
+            ->where('bayan_auto_disabled', true)
+            ->whereExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('variants')
+                    ->whereColumn('variants.product_id', 'products.id')
+                    ->where('variants.is_active', true);
+            })
+            ->update([
+                'is_active' => true,
+                'bayan_auto_disabled' => false,
+                'updated_at' => $timestamp,
+            ]);
+
+        DB::table('products')
+            ->where('is_active', true)
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('variants')
+                    ->whereColumn('variants.product_id', 'products.id')
+                    ->where('variants.is_active', true);
+            })
+            ->update([
+                'is_active' => false,
+                'bayan_auto_disabled' => true,
+                'updated_at' => $timestamp,
+            ]);
     }
 
     private function fetchRecords(): Generator

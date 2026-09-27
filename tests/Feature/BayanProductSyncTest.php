@@ -30,7 +30,7 @@ class BayanProductSyncTest extends TestCase
         ]);
     }
 
-    public function test_sync_updates_only_manually_linked_variants_and_ignores_categories(): void
+    public function test_sync_imports_kind_zero_variants_and_ignores_kind_one_records(): void
     {
         $this->assertFalse(Schema::hasColumn('products', 'bayan_id'));
         $this->assertFalse(Schema::hasColumn('categories', 'bayan_id'));
@@ -87,12 +87,19 @@ class BayanProductSyncTest extends TestCase
         $this->artisan('bayan:sync-products')->assertExitCode(0);
 
         $this->assertSame(1, Product::count());
-        $this->assertSame(2, Variant::count());
+        $this->assertSame(3, Variant::count());
         $this->assertSame($product->id, $linked->fresh()->product_id);
         $this->assertSame('اسم من البيان', $linked->fresh()->property);
         $this->assertSame(9, $linked->fresh()->stock);
         $this->assertEquals(0.564, (float) $linked->fresh()->getRawOriginal('price'));
         $this->assertTrue($linked->fresh()->is_dollar);
+        $this->assertDatabaseHas('variants', [
+            'bayan_id' => 55,
+            'product_id' => null,
+            'property' => 'عنصر بيان غير مربوط',
+            'stock' => 4,
+        ]);
+        $this->assertDatabaseMissing('variants', ['bayan_id' => 3]);
         $this->assertSame('نوع يدوي غير مربوط', Variant::whereNull('bayan_id')->firstOrFail()->property);
         $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'تصنيف يدوي']);
     }
@@ -128,6 +135,82 @@ class BayanProductSyncTest extends TestCase
         $this->assertTrue((bool) $variant->fresh()->is_active);
         $this->assertFalse($variant->fresh()->bayan_unavailable);
         $this->assertSame(6, $variant->fresh()->stock);
+    }
+
+    public function test_zero_stock_deactivates_variant_and_products_without_active_variants(): void
+    {
+        $emptyProduct = Product::create(['name' => 'نفد مخزونه', 'sku_code' => 'OUT-OF-STOCK-1']);
+        $emptyVariant = Variant::create([
+            'product_id' => $emptyProduct->id,
+            'bayan_id' => 71,
+            'price' => 2,
+            'is_dollar' => false,
+            'stock' => 3,
+            'property' => 'نفد',
+            'is_active' => true,
+        ]);
+        $manuallyDisabledProduct = Product::create([
+            'name' => 'معطل يدويًا',
+            'sku_code' => 'OUT-OF-STOCK-MANUAL',
+            'is_active' => false,
+        ]);
+        $manuallyDisabledVariant = Variant::create([
+            'product_id' => $manuallyDisabledProduct->id,
+            'bayan_id' => 73,
+            'price' => 2,
+            'is_dollar' => false,
+            'stock' => 3,
+            'property' => 'معطل يدويًا',
+            'is_active' => true,
+        ]);
+        $availableProduct = Product::create(['name' => 'متوفر جزئيًا', 'sku_code' => 'OUT-OF-STOCK-2']);
+        $unavailableVariant = Variant::create([
+            'product_id' => $availableProduct->id,
+            'bayan_id' => 72,
+            'price' => 2,
+            'is_dollar' => false,
+            'stock' => 3,
+            'property' => 'نفد',
+            'is_active' => true,
+        ]);
+        $activeVariant = Variant::create([
+            'product_id' => $availableProduct->id,
+            'price' => 2,
+            'is_dollar' => false,
+            'stock' => 3,
+            'property' => 'متوفر',
+            'is_active' => true,
+        ]);
+
+        Http::fakeSequence()
+            ->push([
+                ['Id' => 71, 'Name' => 'نفد', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+                ['Id' => 73, 'Name' => 'معطل يدويًا', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+                ['Id' => 72, 'Name' => 'نفد', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+            ])
+            ->push([
+                ['Id' => 71, 'Name' => 'عاد', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+                ['Id' => 73, 'Name' => 'عاد يدويًا', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+            ]);
+
+        app(BayanProductSyncService::class)->sync();
+
+        $this->assertFalse((bool) $emptyVariant->fresh()->is_active);
+        $this->assertSame(0, $emptyVariant->fresh()->stock);
+        $this->assertTrue($emptyVariant->fresh()->bayan_unavailable);
+        $this->assertFalse((bool) $emptyProduct->fresh()->is_active);
+        $this->assertTrue($emptyProduct->fresh()->bayan_auto_disabled);
+        $this->assertFalse((bool) $unavailableVariant->fresh()->is_active);
+        $this->assertTrue((bool) $availableProduct->fresh()->is_active);
+        $this->assertTrue((bool) $activeVariant->fresh()->is_active);
+
+        app(BayanProductSyncService::class)->sync();
+
+        $this->assertTrue((bool) $emptyVariant->fresh()->is_active);
+        $this->assertTrue((bool) $emptyProduct->fresh()->is_active);
+        $this->assertFalse($emptyProduct->fresh()->bayan_auto_disabled);
+        $this->assertTrue((bool) $manuallyDisabledVariant->fresh()->is_active);
+        $this->assertFalse((bool) $manuallyDisabledProduct->fresh()->is_active);
     }
 
     public function test_empty_snapshot_does_not_deactivate_linked_variants(): void
@@ -474,10 +557,10 @@ class BayanProductSyncTest extends TestCase
         $this->artisan('bayan:sync-products')->assertExitCode(0);
 
         $this->assertSame(501, Variant::where('stock', 4)->count());
-        $this->assertSame(8, $variantUpsertQueries);
+        $this->assertSame(7, $variantUpsertQueries);
     }
 
-    public function test_negative_stock_count_in_sync_result_includes_only_linked_variants(): void
+    public function test_negative_stock_count_includes_newly_imported_variants(): void
     {
         $product = Product::create(['name' => 'مخزون', 'sku_code' => 'STOCK-1']);
         Variant::create([
@@ -499,7 +582,7 @@ class BayanProductSyncTest extends TestCase
 
         $result = app(BayanProductSyncService::class)->sync();
 
-        $this->assertSame(0, $result['negative_stock_variants']);
+        $this->assertSame(1, $result['negative_stock_variants']);
     }
 
     public function test_unchanged_linked_variants_are_not_written_or_timestamped(): void

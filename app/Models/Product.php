@@ -15,10 +15,12 @@ class Product extends Model
         'description',
         'sku_code',
         'is_active',
+        'bayan_auto_disabled'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'bayan_auto_disabled' => 'boolean',
     ];
 
     public function category()

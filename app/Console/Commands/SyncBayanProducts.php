@@ -11,7 +11,7 @@ class SyncBayanProducts extends Command
 {
     protected $signature = 'bayan:sync-products {--dry-run : Fetch and validate without writing to the database}';
 
-    protected $description = 'Update manually linked variants from the Bayan accounting API';
+    protected $description = 'Import and synchronize eligible variants from the Bayan accounting API';
 
     public function handle(BayanProductSyncService $syncService): int
     {

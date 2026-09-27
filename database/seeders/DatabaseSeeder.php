@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
         Address::create([
         'name'=> 'store_address',
         'user_id' => 1,
+        'phone' => '+963911113333',
         'location_lat' => 33.5138,
         'location_lng' => 36.2765,
         'description' => 'nane',
