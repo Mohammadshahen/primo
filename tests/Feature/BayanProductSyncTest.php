@@ -10,6 +10,7 @@ use App\Models\Variant;
 use App\Services\BayanProductSyncService;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -102,6 +103,23 @@ class BayanProductSyncTest extends TestCase
         $this->assertDatabaseMissing('variants', ['bayan_id' => 3]);
         $this->assertSame('نوع يدوي غير مربوط', Variant::whereNull('bayan_id')->firstOrFail()->property);
         $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'تصنيف يدوي']);
+    }
+
+    public function test_sync_command_skips_when_another_sync_holds_the_lock(): void
+    {
+        Http::fake();
+        $lock = Cache::lock('bayan-sync', 3600);
+        $this->assertTrue($lock->get());
+
+        try {
+            $this->artisan('bayan:sync-products')
+                ->expectsOutput('Bayan sync is already running. Skipping this run.')
+                ->assertExitCode(0);
+
+            Http::assertNothingSent();
+        } finally {
+            $lock->release();
+        }
     }
 
     public function test_sync_deactivates_missing_link_and_reactivates_it_when_it_returns(): void

@@ -281,7 +281,9 @@ class BayanProductSyncService
     {
         $url = config('services.bayan.products_url');
         $pageSize = (int) config('services.bayan.page_size', 200);
-        $timeout = (int) config('services.bayan.timeout', 30);
+        $timeout = (int) config('services.bayan.timeout', 10);
+        $retries = max(1, (int) config('services.bayan.retry', 2));
+        $retryDelay = max(0, (int) config('services.bayan.retry_delay', 500));
 
         if (! $url || $pageSize < 1 || $pageSize > 1000) {
             throw new RuntimeException('Configure BAYAN_PRODUCTS_URL and a BAYAN_PAGE_SIZE between 1 and 1000.');
@@ -289,7 +291,7 @@ class BayanProductSyncService
 
         $request = Http::acceptJson()
             ->timeout($timeout)
-            ->retry(3, 1000, fn ($exception) => $exception instanceof ConnectionException
+            ->retry($retries, $retryDelay, fn ($exception) => $exception instanceof ConnectionException
                 || ($exception instanceof RequestException && $exception->response->serverError()));
         if ($token = config('services.bayan.token')) {
             $request = $request->withToken($token);
