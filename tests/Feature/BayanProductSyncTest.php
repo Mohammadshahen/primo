@@ -189,7 +189,7 @@ class BayanProductSyncTest extends TestCase
         $this->assertSame(1, Variant::count());
     }
 
-    public function test_admin_can_manually_link_a_bayan_source_row_to_a_product_variant(): void
+    public function test_product_update_rejects_variant_data_mutation(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $product = Product::create(['name' => 'منتج يدوي', 'sku_code' => 'MANUAL-7']);
@@ -200,23 +200,111 @@ class BayanProductSyncTest extends TestCase
             'stock' => 1,
             'property' => 'الافتراضي',
         ]);
-        $key = hash('sha256', "77\0".'اسم البيان');
-
         $this->actingAs($admin, 'sanctum')
             ->patchJson('/api/admin/products/'.$product->id, [
                 'update_variants' => [[
                     'id' => $variant->id,
                     'bayan_id' => 77,
-                    'bayan_variant_key' => $key,
+                    'property' => 'تغيير غير مسموح',
                 ]],
             ])
-            ->assertOk();
+            ->assertUnprocessable();
 
         $this->assertDatabaseHas('variants', [
             'id' => $variant->id,
-            'bayan_id' => 77,
-            'bayan_variant_key' => $key,
+            'bayan_id' => null,
+            'property' => 'الافتراضي',
         ]);
+    }
+
+    public function test_product_creation_links_existing_variant_ids_without_creating_variants(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $existingProduct = Product::create(['name' => 'مصدر يدوي', 'sku_code' => 'SOURCE-1']);
+        $variants = collect(['صغير', 'كبير'])->map(fn (string $property) => Variant::create([
+            'product_id' => $existingProduct->id,
+            'price' => 1.25,
+            'is_dollar' => false,
+            'stock' => 5,
+            'property' => $property,
+            'is_active' => true,
+        ]));
+        $variantCount = Variant::count();
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/admin/products', [
+                'name' => 'منتج جديد',
+                'variant_ids' => $variants->pluck('id')->all(),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'منتج جديد');
+
+        $createdProduct = Product::where('name', 'منتج جديد')->firstOrFail();
+        $this->assertSame($variantCount, Variant::count());
+        $this->assertSame(2, $createdProduct->variants()->count());
+        $this->assertSame(
+            [$createdProduct->id],
+            Variant::whereIn('id', $variants->pluck('id'))->pluck('product_id')->unique()->all()
+        );
+    }
+
+    public function test_product_update_links_existing_variants_and_rejects_new_variant_creation(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $sourceProduct = Product::create(['name' => 'مصدر', 'sku_code' => 'UPDATE-SOURCE']);
+        $targetProduct = Product::create(['name' => 'هدف', 'sku_code' => 'UPDATE-TARGET']);
+        $variant = Variant::create([
+            'product_id' => $sourceProduct->id,
+            'price' => 1,
+            'is_dollar' => false,
+            'stock' => 3,
+            'property' => 'موجود',
+            'is_active' => true,
+        ]);
+        $variantCount = Variant::count();
+
+        $this->actingAs($admin, 'sanctum')
+            ->patchJson('/api/admin/products/'.$targetProduct->id, [
+                'variant_ids' => [$variant->id],
+            ])
+            ->assertOk();
+
+        $this->assertSame($targetProduct->id, $variant->fresh()->product_id);
+        $this->assertSame($variantCount, Variant::count());
+
+        $this->actingAs($admin, 'sanctum')
+            ->patchJson('/api/admin/products/'.$targetProduct->id, [
+                'add_variants' => [[
+                    'property' => 'جديد',
+                    'price' => 2,
+                    'stock' => 5,
+                ]],
+            ])
+            ->assertUnprocessable();
+
+        $this->assertSame($variantCount, Variant::count());
+    }
+
+    public function test_deleting_product_preserves_variants_and_clears_product_id(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $product = Product::create(['name' => 'سيحذف', 'sku_code' => 'DELETE-KEEP-VARIANTS']);
+        $variant = Variant::create([
+            'product_id' => $product->id,
+            'price' => 1.5,
+            'is_dollar' => false,
+            'stock' => 6,
+            'property' => 'محتفظ به',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson('/api/admin/products/'.$product->id)
+            ->assertOk();
+
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        $this->assertDatabaseHas('variants', ['id' => $variant->id, 'product_id' => null]);
+        $this->assertSame(1, Variant::count());
     }
 
     public function test_cart_item_note_is_persisted_and_returned(): void

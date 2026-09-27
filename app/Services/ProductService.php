@@ -88,17 +88,8 @@ class ProductService extends Service
                 'sku_code' => strtoupper(substr(md5(uniqid()), 0, 4)) . '-' . strtoupper(substr(md5(uniqid()), 0, 8)),
             ]);
 
-            foreach ($data['variants'] as $variantData) {
-                $product->variants()->create([
-                    'price' => $variantData['price'] ?? 1,
-                    'is_dollar' => $variantData['is_dollar'] ?? false,
-                    'stock' => $variantData['stock'] ?? 1,
-                    'property' => $variantData['property'] ?? null,
-                    'is_active' => true,
-                    'bayan_id' => $variantData['bayan_id'] ?? null,
-                    'bayan_variant_key' => $variantData['bayan_variant_key'] ?? null,
-                ]);
-            }
+            Variant::whereIn('id', $data['variant_ids'])
+                ->update(['product_id' => $product->id]);
 
             DB::commit();
             return [
@@ -123,36 +114,9 @@ class ProductService extends Service
 
 
 
-            if (isset($data['update_variants'])) {
-                foreach ($data['update_variants'] as $variantData) {
-                    $variant = $product->variants()->find($variantData['id']);
-                    if ($variant) {
-                        $variant->update([
-                            'price' => $variantData['price'] ?? $variant->price,
-                            'is_dollar' => $variantData['is_dollar'] ?? $variant->is_dollar,
-                            'stock' => $variantData['stock'] ?? $variant->stock,
-                            'property' => $variantData['property'] ?? $variant->property,
-                            'is_active' => $variantData['is_active'] ?? $variant->is_active,
-                            'bayan_id' => array_key_exists('bayan_id', $variantData) ? $variantData['bayan_id'] : $variant->bayan_id,
-                            'bayan_variant_key' => array_key_exists('bayan_variant_key', $variantData) ? $variantData['bayan_variant_key'] : $variant->bayan_variant_key,
-                            'bayan_unavailable' => array_key_exists('is_active', $variantData) ? false : $variant->bayan_unavailable,
-                        ]);
-                    }
-                }
-            }
-
-            if (isset($data['add_variants'])) {
-                foreach ($data['add_variants'] as $variantData) {
-                    $product->variants()->create([
-                        'price' => $variantData['price'] ?? 1,
-                        'is_dollar' => $variantData['is_dollar'] ?? false,
-                        'stock' => $variantData['stock'] ?? 1,
-                        'property' => $variantData['property'] ?? null,
-                        'is_active' => true,
-                        'bayan_id' => $variantData['bayan_id'] ?? null,
-                        'bayan_variant_key' => $variantData['bayan_variant_key'] ?? null,
-                    ]);
-                }
+            if (array_key_exists('variant_ids', $data)) {
+                Variant::whereIn('id', $data['variant_ids'] ?? [])
+                    ->update(['product_id' => $product->id]);
             }
             $productStatus = $data['is_active'] ?? $product->is_active;
             if ($productStatus == true) {

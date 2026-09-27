@@ -56,7 +56,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 ## Bayan Product Sync
 
-Products and categories remain manually managed in this application. Set `bayan_id` on each matching manual variant through the admin product create/update API. `GET /api/admin/bayan/variants/unlinked` lists Bayan `Kind=0` rows that are not linked yet; `Kind=1` rows are ignored. Each Bayan item ID can be linked to only one local variant.
+Products and categories remain manually managed in this application. Product creation accepts `variant_ids`, an array of existing variant IDs, and links those rows to the new product without creating variants. Product updates can also accept `variant_ids` to attach existing variants; `add_variants` is rejected. Set `bayan_id` and `bayan_variant_key` on each selected manual variant through the admin product create/update API. `GET /api/admin/bayan/variants/unlinked` lists Bayan `Kind=0` rows that are not linked yet; `Kind=1` rows are ignored. Each Bayan item ID can be linked to only one local variant.
 
 `bayan:sync-products` updates the price from `BAYAN_PRICE_FIELD` (default `Price4`), name/property, stock and currency on linked variants only. `CURRENCY=2` maps to `is_dollar=true`; negative stock is clamped to zero. Linked variants absent from a valid non-empty source snapshot are deactivated. If they return later, only variants marked unavailable by this sync are reactivated. An empty or malformed response fails without changing availability. Manual products, categories, images, descriptions, SKUs, and unlinked variants are not created or changed by the sync.
 

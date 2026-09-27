@@ -21,13 +21,8 @@ class StoreProductRequest extends FormRequest
                                     |mimes:png,jpg,jpeg
                                     |mimetypes:image/jpeg,image/png,image/jpg
                                     |max:5000',
-            'variants' => 'required|array|min:1',
-            'variants.*.property' => 'required|string|max:255',
-            'variants.*.price' => 'required|numeric|min:0',
-            'variants.*.is_dollar' => 'nullable|boolean',
-            'variants.*.stock' => 'required|integer|min:1',
-            'variants.*.bayan_id' => 'nullable|integer|unique:variants,bayan_id',
-            'variants.*.bayan_variant_key' => 'nullable|string|size:64|unique:variants,bayan_variant_key',
+            'variant_ids' => 'required|array|min:1',
+            'variant_ids.*' => 'required|integer|distinct|exists:variants,id',
         ];
     }
 
@@ -38,13 +33,8 @@ class StoreProductRequest extends FormRequest
             'name' => 'الاسم',
             'description' => 'الوصف',
             'image' => 'الصورة',
-            'variants' => 'الأنواع',
-            'variants.*.property' => 'النوع,الحجم',
-            'variants.*.price' => 'سعر النوع',
-            'variants.*.is_dollar' => 'حالة السعر بالدولار',
-            'variants.*.stock' => 'مخزون النوع',
-            'variants.*.bayan_id' => 'معرف البيان',
-            'variants.*.bayan_variant_key' => 'مفتاح نوع البيان',
+            'variant_ids' => 'الأنواع الموجودة',
+            'variant_ids.*' => 'معرف النوع',
         ];
     }
 
@@ -58,19 +48,11 @@ class StoreProductRequest extends FormRequest
             'mimes' => 'حقل :attribute يجب أن يكون من النوع: :values.',
             'exists' => 'حقل :attribute غير موجود.',
             'unique' => 'حقل :attribute يجب أن يكون فريداً.',
-            'variants.required' => 'يجب ادخال حقل :attribute.',
-            'variants.array' => 'حقل :attribute يجب أن يكون مصفوفة.',
-            'variants.min' => 'يجب أن يحتوي حقل :attribute على الأقل :min عنصر.',
-            'variants.*.property.required' => 'حقل  النوع/الحجم مطلوب لكل نوع.',
-            'variants.*.property.string' => 'حقل اسم النوع/الحجم يجب أن يكون نصاً لكل نوع.',
-            'variants.*.property.max' => 'حقل اسم النوع/الحجم يجب ألا يتجاوز :max حرف/حروف لكل نوع.',
-            'variants.*.price.required' => 'حقل سعر النوع مطلوب لكل نوع.',
-            'variants.*.price.numeric' => 'حقل سعر النوع يجب أن يكون رقماً لكل نوع.',
-            'variants.*.price.min' => 'حقل سعر النوع يجب أن يكون على الأقل :min لكل نوع.',
-            'variants.*.is_dollar.boolean' => 'حقل حالة السعر بالدولار يجب أن يكون صحيحاً أو خاطئاً.',
-            'variants.*.stock.required' => 'حقل مخزون النوع مطلوب لكل نوع.',
-            'variants.*.stock.integer' => 'حقل مخزون النوع يجب أن يكون عدداً صحيحاً لكل نوع.',
-            'variants.*.stock.min' => 'حقل مخزون النوع يجب أن يكون على الأقل :min لكل نوع.',
+            'variant_ids.required' => 'يجب تحديد الأنواع الموجودة للمنتج.',
+            'variant_ids.array' => 'يجب إرسال معرفات الأنواع ضمن مصفوفة.',
+            'variant_ids.min' => 'يجب ربط نوع واحد على الأقل بالمنتج.',
+            'variant_ids.*.exists' => 'أحد الأنواع المحددة غير موجود.',
+            'variant_ids.*.distinct' => 'لا يمكن تكرار معرف النوع.',
         ];
     }
 }
