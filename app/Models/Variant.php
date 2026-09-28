@@ -15,6 +15,7 @@ class Variant extends Model
         'bayan_variant_key',
         'bayan_currency_id',
         'bayan_unavailable',
+        'is_auto_deactivated',
         'price',
         'is_dollar',
         'stock',
@@ -25,6 +26,7 @@ class Variant extends Model
     protected $casts = [
         'is_dollar' => 'boolean',
         'bayan_unavailable' => 'boolean',
+        'is_auto_deactivated' => 'boolean',
     ];
 
     // protected $appends = [

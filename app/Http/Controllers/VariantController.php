@@ -28,6 +28,7 @@ class VariantController extends Controller
                 'is_dollar',
                 'stock',
                 'is_active',
+                'is_auto_deactivated',
             ]);
 
         if (isset($filters['linked'])) {
@@ -58,6 +59,7 @@ class VariantController extends Controller
                 'is_dollar' => $variant->is_dollar,
                 'stock' => $variant->stock,
                 'is_active' => $variant->is_active,
+                'is_auto_deactivated' => $variant->is_auto_deactivated,
             ]);
 
         return $this->paginate($variants, 'تم جلب الأنواع بنجاح');
@@ -67,11 +69,16 @@ class VariantController extends Controller
     {
         abort_unless((bool) $request->user()?->is_admin, 403);
 
+        $isActive = ! $variant->is_active;
         $variant->update([
-            'is_active' => ! $variant->is_active,
+            'is_active' => $isActive,
+            'is_auto_deactivated' => $isActive,
             'bayan_unavailable' => false,
         ]);
 
-        return $this->success($variant->only(['id', 'product_id', 'is_active']), 'تم تغيير حالة النوع بنجاح');
+        return $this->success(
+            $variant->only(['id', 'product_id', 'is_active', 'is_auto_deactivated']),
+            'تم تغيير حالة النوع بنجاح'
+        );
     }
 }

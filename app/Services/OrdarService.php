@@ -110,7 +110,10 @@ class OrdarService extends Service
 
                 $item->variant->decrement('stock', $item->count);
                 if ($item->variant->stock == 0) {
-                    $item->variant->update(['is_active' => false]);
+                    $item->variant->update([
+                        'is_active' => false,
+                        'is_auto_deactivated' => true,
+                    ]);
                 }
                 $this->checkProductAvailability($item->variant->product_id);
                 $item->delete();

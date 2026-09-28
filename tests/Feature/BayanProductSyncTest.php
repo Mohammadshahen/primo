@@ -148,6 +148,7 @@ class BayanProductSyncTest extends TestCase
         $this->artisan('bayan:sync-products')->assertExitCode(0);
         $this->assertFalse((bool) $variant->fresh()->is_active);
         $this->assertTrue($variant->fresh()->bayan_unavailable);
+        $this->assertTrue($variant->fresh()->is_auto_deactivated);
 
         $this->artisan('bayan:sync-products')->assertExitCode(0);
         $this->assertTrue((bool) $variant->fresh()->is_active);
@@ -216,6 +217,7 @@ class BayanProductSyncTest extends TestCase
         $this->assertFalse((bool) $emptyVariant->fresh()->is_active);
         $this->assertSame(0, $emptyVariant->fresh()->stock);
         $this->assertTrue($emptyVariant->fresh()->bayan_unavailable);
+        $this->assertTrue($emptyVariant->fresh()->is_auto_deactivated);
         $this->assertFalse((bool) $emptyProduct->fresh()->is_active);
         $this->assertTrue($emptyProduct->fresh()->bayan_auto_disabled);
         $this->assertFalse((bool) $unavailableVariant->fresh()->is_active);
@@ -467,6 +469,8 @@ class BayanProductSyncTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.is_active', false);
 
+        $this->assertFalse($unlinkedVariant->fresh()->is_auto_deactivated);
+
         $this->actingAs($regularUser, 'sanctum')
             ->getJson('/api/admin/variants')
             ->assertForbidden();
@@ -530,6 +534,38 @@ class BayanProductSyncTest extends TestCase
             'count' => 1,
             'note' => 'الصلصة على الجانب',
         ]);
+    }
+
+    public function test_order_exhaustion_marks_variant_as_automatically_deactivated(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::create(['name' => 'آخر قطعة', 'sku_code' => 'AUTO-DEACTIVATE-ORDER']);
+        $variant = Variant::create([
+            'product_id' => $product->id,
+            'price' => 2,
+            'is_dollar' => false,
+            'stock' => 1,
+            'property' => 'قطعة واحدة',
+            'is_active' => true,
+        ]);
+        Cart::create([
+            'user_id' => $user->id,
+            'variant_id' => $variant->id,
+            'count' => 1,
+        ]);
+
+        $notifications = \Mockery::mock(NotificationService::class);
+        $notifications->shouldReceive('notifictionCreateOrdarForAdmin')->once();
+        $notifications->shouldReceive('notifictionCreateOrdarForUser')->once();
+        $this->instance(NotificationService::class, $notifications);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/user/ordar/confirme', ['is_delivery' => false])
+            ->assertOk();
+
+        $this->assertSame(0, $variant->fresh()->stock);
+        $this->assertFalse((bool) $variant->fresh()->is_active);
+        $this->assertTrue($variant->fresh()->is_auto_deactivated);
     }
 
     public function test_sync_batches_variant_updates(): void

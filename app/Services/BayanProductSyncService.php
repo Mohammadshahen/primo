@@ -152,6 +152,7 @@ class BayanProductSyncService
                     Variant::whereIn('id', $deactivateIds)->update([
                         'is_active' => false,
                         'bayan_unavailable' => true,
+                        'is_auto_deactivated' => true,
                         'updated_at' => $timestamp,
                     ]);
                 }
@@ -170,6 +171,7 @@ class BayanProductSyncService
                     'bayan_variant_key',
                     'is_active',
                     'bayan_unavailable',
+                    'is_auto_deactivated',
                 ])
                 ->keyBy('bayan_id');
             $upserts = [];
@@ -184,10 +186,14 @@ class BayanProductSyncService
                 $newCurrencyId = $record['CURRENCY'];
                 $newProperty = $record['Name'];
                 $newVariantKey = $record['bayan_variant_key'];
-                $newIsActive = $newStock > 0
-                    ? ($existing === null || $existing->bayan_unavailable ? true : (bool) $existing->is_active)
-                    : false;
+                $newIsActive = $newStock > 0 && (
+                    $existing === null
+                    || (bool) $existing->is_active
+                    || (bool) $existing->is_auto_deactivated
+                );
                 $newBayanUnavailable = $newStock === 0;
+                $newIsAutoDeactivated = $newStock === 0
+                    || ($existing === null || (bool) $existing->is_auto_deactivated);
 
                 if ($existing !== null) {
                     $hasChanges = number_format((float) $existing->price, 3, '.', '')
@@ -198,7 +204,8 @@ class BayanProductSyncService
                     || $existing->property !== $newProperty
                     || $existing->bayan_variant_key !== $newVariantKey
                     || (bool) $existing->is_active !== $newIsActive
-                    || (bool) $existing->bayan_unavailable !== $newBayanUnavailable;
+                    || (bool) $existing->bayan_unavailable !== $newBayanUnavailable
+                    || (bool) $existing->is_auto_deactivated !== $newIsAutoDeactivated;
 
                     if (! $hasChanges) {
                         continue;
@@ -222,6 +229,7 @@ class BayanProductSyncService
                     'property' => $newProperty,
                     'is_active' => $newIsActive,
                     'bayan_unavailable' => $newBayanUnavailable,
+                    'is_auto_deactivated' => $newIsAutoDeactivated,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
@@ -238,6 +246,7 @@ class BayanProductSyncService
                     'bayan_variant_key',
                     'is_active',
                     'bayan_unavailable',
+                    'is_auto_deactivated',
                     'updated_at',
                 ]);
             }
