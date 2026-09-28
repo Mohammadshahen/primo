@@ -10,6 +10,7 @@ use App\Models\Variant;
 use App\Services\BayanProductSyncService;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -120,6 +121,32 @@ class BayanProductSyncTest extends TestCase
         } finally {
             $lock->release();
         }
+    }
+
+    public function test_bayan_fetches_all_pages_using_limit_and_incrementing_offset(): void
+    {
+        config(['services.bayan.page_size' => 2]);
+        Http::fakeSequence()
+            ->push([
+                ['Id' => 801, 'Name' => 'أول', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
+                ['Id' => 802, 'Name' => 'ثان', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
+            ])
+            ->push([
+                ['Id' => 803, 'Name' => 'ثالث', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
+            ]);
+
+        $records = app(BayanProductSyncService::class)->unlinkedVariants();
+
+        $this->assertCount(3, $records);
+        Http::assertSent(fn (HttpRequest $request): bool =>
+            str_contains($request->url(), 'limit=2')
+            && str_contains($request->url(), 'offset=0')
+        );
+        Http::assertSent(fn (HttpRequest $request): bool =>
+            str_contains($request->url(), 'limit=2')
+            && str_contains($request->url(), 'offset=2')
+        );
+        Http::assertSentCount(2);
     }
 
     public function test_sync_deactivates_missing_link_and_reactivates_it_when_it_returns(): void

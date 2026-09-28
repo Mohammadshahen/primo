@@ -312,7 +312,7 @@ class BayanProductSyncService
         $offset = 0;
         $lastFingerprint = null;
         do {
-            $response = $request->get($url, ['offset' => $offset, 'limet' => $pageSize]);
+            $response = $request->get($url, ['offset' => $offset, 'limit' => $pageSize]);
             $response->throw();
             $page = $this->normalizeResponse($response->json());
 
