@@ -50,7 +50,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategoriesTableSeeder::class,
             ProductsTableSeeder::class,
-            VariantsTableSeeder::class,
+            // VariantsTableSeeder::class,
             OffersTableSeeder::class,
             AddressesTableSeeder::class,
             SuggestionSeeder::class,
