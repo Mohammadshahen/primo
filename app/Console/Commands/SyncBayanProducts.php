@@ -28,6 +28,7 @@ class SyncBayanProducts extends Command
         try {
             $result = $syncService->sync((bool) $this->option('dry-run'));
             $duration = round(microtime(true) - $startedAt, 2);
+            $result['duration_seconds'] = $duration;
 
             Log::info('Bayan sync command completed.', [
                 'duration_seconds' => $duration,
@@ -45,7 +46,7 @@ class SyncBayanProducts extends Command
             }
 
             $this->table(
-                ['Result', 'Count'],
+                ['Result', 'Value'],
                 collect($result)->map(fn ($count, $label) => [$label, $count])->values()->all()
             );
 

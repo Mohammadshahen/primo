@@ -331,7 +331,7 @@ class BayanProductSyncService
                 yield $record;
             }
             $offset += $pageCount;
-        } while ($pageCount === $pageSize);
+        } while (true);
     }
 
     private function normalizeResponse(mixed $payload): array
@@ -387,30 +387,58 @@ class BayanProductSyncService
                 continue;
             }
 
-            foreach (['Quantity', 'CURRENCY'] as $field) {
-                if (! isset($record[$field]) || ! $this->isIntegerValue($record[$field])) {
-                    throw new RuntimeException("Bayan variant {$record['Id']} has no valid {$field} value.");
-                }
+            if (! isset($record['Quantity']) || ! is_numeric($record['Quantity'])
+                || ! is_finite((float) $record['Quantity'])) {
+                throw new RuntimeException("Bayan variant {$record['Id']} has no valid Quantity value.");
             }
 
+            $roundedQuantity = round((float) $record['Quantity']);
+            if (abs((float) $record['Quantity'] - $roundedQuantity) > 0.01) {
+                throw new RuntimeException("Bayan variant {$record['Id']} has a fractional Quantity value.");
+            }
+
+            $quantity = (int) $roundedQuantity;
+            $invalidFields = [];
+            if (! isset($record['CURRENCY']) || ! $this->isIntegerValue($record['CURRENCY'])) {
+                $invalidFields[] = 'CURRENCY';
+            }
             if (! isset($record[$priceField]) || ! is_numeric($record[$priceField])) {
-                throw new RuntimeException("Bayan variant {$record['Id']} has no valid {$priceField} value.");
+                $invalidFields[] = $priceField;
+            }
+
+            if ($invalidFields !== []) {
+                if ($quantity === 0) {
+                    Log::warning('Skipping unavailable Bayan variant with missing pricing data.', [
+                        'bayan_id' => (int) $record['Id'],
+                        'invalid_fields' => $invalidFields,
+                    ]);
+                    continue;
+                }
+
+                throw new RuntimeException(
+                    "Bayan variant {$record['Id']} has no valid ".implode(' or ', $invalidFields).' value.'
+                );
             }
 
             $id = (int) $record['Id'];
-            if (isset($variants[$id])) {
-                throw new RuntimeException("Bayan API returned duplicate variant ID {$id}.");
-            }
-
             $name = trim((string) $record['Name']);
-            $quantity = (int) $record['Quantity'];
-            $variants[$id] = [
+            $variant = [
                 'Name' => $name,
                 'Quantity' => $quantity,
                 'CURRENCY' => (int) $record['CURRENCY'],
                 $priceField => (float) $record[$priceField],
                 'bayan_variant_key' => $this->variantKey($id, $name),
             ];
+
+            if (isset($variants[$id])) {
+                if ($variants[$id] !== $variant) {
+                    throw new RuntimeException("Bayan API returned conflicting records for variant ID {$id}.");
+                }
+
+                continue;
+            }
+
+            $variants[$id] = $variant;
         }
 
         return [$variants, $recordsReceived];

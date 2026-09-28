@@ -62,8 +62,8 @@ class BayanProductSyncTest extends TestCase
             'is_active' => true,
         ]);
 
-        Http::fake([
-            'primo.bayanapi.uk/*' => Http::response([
+        Http::fakeSequence()
+            ->push([
                 ['Id' => 3, 'Name' => 'مجموعة', 'parent' => 0, 'Kind' => 1],
                 [
                     'Id' => 44,
@@ -83,8 +83,8 @@ class BayanProductSyncTest extends TestCase
                     'parent' => 3,
                     'Kind' => 0,
                 ],
-            ]),
-        ]);
+            ])
+            ->push([]);
 
         $this->artisan('bayan:sync-products')->assertExitCode(0);
 
@@ -125,28 +125,85 @@ class BayanProductSyncTest extends TestCase
 
     public function test_bayan_fetches_all_pages_using_limit_and_incrementing_offset(): void
     {
-        config(['services.bayan.page_size' => 2]);
+        config(['services.bayan.page_size' => 3]);
         Http::fakeSequence()
             ->push([
                 ['Id' => 801, 'Name' => 'أول', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 802, 'Name' => 'ثان', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
             ])
             ->push([
+                ['Id' => 802, 'Name' => 'ثان', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 803, 'Name' => 'ثالث', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
-            ]);
+            ])
+            ->push([
+                ['Id' => 804, 'Name' => 'رابع', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
+            ])
+            ->push([]);
 
         $records = app(BayanProductSyncService::class)->unlinkedVariants();
 
-        $this->assertCount(3, $records);
+        $this->assertCount(4, $records);
         Http::assertSent(fn (HttpRequest $request): bool =>
-            str_contains($request->url(), 'limit=2')
+            str_contains($request->url(), 'limit=3')
             && str_contains($request->url(), 'offset=0')
         );
         Http::assertSent(fn (HttpRequest $request): bool =>
-            str_contains($request->url(), 'limit=2')
+            str_contains($request->url(), 'limit=3')
             && str_contains($request->url(), 'offset=2')
         );
-        Http::assertSentCount(2);
+        Http::assertSent(fn (HttpRequest $request): bool =>
+            str_contains($request->url(), 'limit=3')
+            && str_contains($request->url(), 'offset=4')
+        );
+        Http::assertSent(fn (HttpRequest $request): bool =>
+            str_contains($request->url(), 'limit=3')
+            && str_contains($request->url(), 'offset=5')
+        );
+        Http::assertSentCount(4);
+    }
+
+    public function test_bayan_quantity_float_precision_noise_is_rounded_to_integer(): void
+    {
+        Http::fakeSequence()
+            ->push([[
+                'Id' => 172,
+                'Name' => 'كمية متأثرة بدقة الفاصلة العائمة',
+                'Quantity' => -0.0040000000000000036,
+                'Price4' => 0.75,
+                'CURRENCY' => 2,
+                'Kind' => 0,
+            ]])
+            ->push([]);
+
+        $variants = app(BayanProductSyncService::class)->unlinkedVariants();
+
+        $this->assertCount(1, $variants);
+        $this->assertSame(172, $variants[0]['bayan_id']);
+        $this->assertSame(0, $variants[0]['stock']);
+    }
+
+    public function test_zero_stock_records_with_missing_price_data_are_skipped(): void
+    {
+        Http::fakeSequence()
+            ->push([
+                [
+                    'Id' => 2633,
+                    'Name' => 'عنصر بلا بيانات سعر',
+                    'Quantity' => 0,
+                    'Price4' => null,
+                    'CURRENCY' => null,
+                    'Kind' => 0,
+                ],
+                ['Id' => 2634, 'Name' => 'عنصر صالح', 'Quantity' => 3, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+            ])
+            ->push([]);
+
+        $result = app(BayanProductSyncService::class)->sync();
+
+        $this->assertSame(1, $result['variants_created']);
+        $this->assertSame(1, $result['source_variants']);
+        $this->assertDatabaseMissing('variants', ['bayan_id' => 2633]);
+        $this->assertDatabaseHas('variants', ['bayan_id' => 2634, 'stock' => 3]);
     }
 
     public function test_sync_deactivates_missing_link_and_reactivates_it_when_it_returns(): void
@@ -167,10 +224,12 @@ class BayanProductSyncTest extends TestCase
                 ['Id' => 3, 'Name' => 'مجموعة', 'parent' => 0, 'Kind' => 1],
                 ['Id' => 8, 'Name' => 'موجود', 'Quantity' => 5, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
             ])
+            ->push([])
             ->push([
                 ['Id' => 3, 'Name' => 'مجموعة', 'parent' => 0, 'Kind' => 1],
                 ['Id' => 7, 'Name' => 'عاد', 'Quantity' => 6, 'Price4' => 2.25, 'CURRENCY' => 1, 'Kind' => 0],
-            ]);
+            ])
+            ->push([]);
 
         $this->artisan('bayan:sync-products')->assertExitCode(0);
         $this->assertFalse((bool) $variant->fresh()->is_active);
@@ -249,11 +308,13 @@ class BayanProductSyncTest extends TestCase
                 ['Id' => 74, 'Name' => 'تعطيل يدوي', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 72, 'Name' => 'نفد', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
             ])
+            ->push([])
             ->push([
                 ['Id' => 71, 'Name' => 'عاد', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 73, 'Name' => 'عاد يدويًا', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 74, 'Name' => 'تعطيل يدوي', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
-            ]);
+            ])
+            ->push([]);
 
         app(BayanProductSyncService::class)->sync();
 
@@ -312,15 +373,15 @@ class BayanProductSyncTest extends TestCase
         ]);
         $admin = User::factory()->create(['is_admin' => true]);
 
-        Http::fake([
-            'primo.bayanapi.uk/*' => Http::response([
+        Http::fakeSequence()
+            ->push([
                 ['Id' => 3, 'Name' => 'مجموعة', 'parent' => 0, 'Kind' => 1],
                 ['Id' => 4, 'Name' => 'مرتبط', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 5, 'Name' => 'غير مرتبط', 'Quantity' => 2, 'Price4' => 3.75, 'CURRENCY' => 2, 'Kind' => 0],
                 ['Id' => 12, 'Name' => '3abc', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 123, 'Name' => 'abc', 'Quantity' => 1, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
-            ]),
-        ]);
+            ])
+            ->push([]);
 
         $response = $this->actingAs($admin, 'sanctum')
             ->getJson('/api/admin/bayan/variants/unlinked')
@@ -644,7 +705,7 @@ class BayanProductSyncTest extends TestCase
         }
 
         DB::table('variants')->insert($insertRows);
-        Http::fake(['primo.bayanapi.uk/*' => Http::response($source)]);
+        Http::fakeSequence()->push($source)->push([]);
 
         $variantUpsertQueries = 0;
         DB::listen(function ($query) use (&$variantUpsertQueries): void {
@@ -672,12 +733,12 @@ class BayanProductSyncTest extends TestCase
             'is_active' => true,
         ]);
 
-        Http::fake([
-            'primo.bayanapi.uk/*' => Http::response([
+        Http::fakeSequence()
+            ->push([
                 ['Id' => 1, 'Name' => 'مرتبط', 'Quantity' => 5, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 2, 'Name' => 'غير مرتبط', 'Quantity' => -8, 'Price4' => 1, 'CURRENCY' => 1, 'Kind' => 0],
-            ]),
-        ]);
+            ])
+            ->push([]);
 
         $result = app(BayanProductSyncService::class)->sync();
 
@@ -703,16 +764,16 @@ class BayanProductSyncTest extends TestCase
         ]);
         $variant->forceFill(['updated_at' => $updatedAt])->save();
 
-        Http::fake([
-            'primo.bayanapi.uk/*' => Http::response([[
+        Http::fakeSequence()
+            ->push([[
                 'Id' => 901,
                 'Name' => $name,
                 'Quantity' => 7,
                 'Price4' => 0.564,
                 'CURRENCY' => 1,
                 'Kind' => 0,
-            ]]),
-        ]);
+            ]])
+            ->push([]);
 
         $variantUpsertQueries = 0;
         DB::listen(function ($query) use (&$variantUpsertQueries): void {

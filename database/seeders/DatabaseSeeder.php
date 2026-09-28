@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
             CategoriesTableSeeder::class,
             ProductsTableSeeder::class,
             // VariantsTableSeeder::class,
-            OffersTableSeeder::class,
+            // OffersTableSeeder::class,
             AddressesTableSeeder::class,
             SuggestionSeeder::class,
         ]);
