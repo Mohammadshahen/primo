@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
 
 Schedule::command('bayan:sync-products')
     ->everyFifteenMinutes()
-    ->withoutOverlapping(60)
+    ->withoutOverlapping(20)
     ->runInBackground();
