@@ -182,6 +182,20 @@ class BayanProductSyncTest extends TestCase
             'property' => 'معطل يدويًا',
             'is_active' => true,
         ]);
+        $manualVariantProduct = Product::create([
+            'name' => 'نوع معطل يدويًا',
+            'sku_code' => 'VARIANT-MANUALLY-OFF',
+        ]);
+        $manualVariant = Variant::create([
+            'product_id' => $manualVariantProduct->id,
+            'bayan_id' => 74,
+            'price' => 2,
+            'is_dollar' => false,
+            'stock' => 0,
+            'property' => 'تعطيل يدوي',
+            'is_active' => false,
+            'is_auto_deactivated' => false,
+        ]);
         $availableProduct = Product::create(['name' => 'متوفر جزئيًا', 'sku_code' => 'OUT-OF-STOCK-2']);
         $unavailableVariant = Variant::create([
             'product_id' => $availableProduct->id,
@@ -205,11 +219,13 @@ class BayanProductSyncTest extends TestCase
             ->push([
                 ['Id' => 71, 'Name' => 'نفد', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 73, 'Name' => 'معطل يدويًا', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+                ['Id' => 74, 'Name' => 'تعطيل يدوي', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 72, 'Name' => 'نفد', 'Quantity' => 0, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
             ])
             ->push([
                 ['Id' => 71, 'Name' => 'عاد', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
                 ['Id' => 73, 'Name' => 'عاد يدويًا', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
+                ['Id' => 74, 'Name' => 'تعطيل يدوي', 'Quantity' => 4, 'Price4' => 2, 'CURRENCY' => 1, 'Kind' => 0],
             ]);
 
         app(BayanProductSyncService::class)->sync();
@@ -231,6 +247,8 @@ class BayanProductSyncTest extends TestCase
         $this->assertFalse($emptyProduct->fresh()->bayan_auto_disabled);
         $this->assertTrue((bool) $manuallyDisabledVariant->fresh()->is_active);
         $this->assertFalse((bool) $manuallyDisabledProduct->fresh()->is_active);
+        $this->assertFalse((bool) $manualVariant->fresh()->is_active);
+        $this->assertFalse($manualVariant->fresh()->is_auto_deactivated);
     }
 
     public function test_empty_snapshot_does_not_deactivate_linked_variants(): void

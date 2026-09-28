@@ -192,8 +192,11 @@ class BayanProductSyncService
                     || (bool) $existing->is_auto_deactivated
                 );
                 $newBayanUnavailable = $newStock === 0;
-                $newIsAutoDeactivated = $newStock === 0
-                    || ($existing === null || (bool) $existing->is_auto_deactivated);
+                $manuallyDeactivated = $existing !== null
+                    && ! (bool) $existing->is_active
+                    && ! (bool) $existing->is_auto_deactivated;
+                $newIsAutoDeactivated = ! $manuallyDeactivated
+                    && ($newStock === 0 || $existing === null || (bool) $existing->is_auto_deactivated);
 
                 if ($existing !== null) {
                     $hasChanges = number_format((float) $existing->price, 3, '.', '')
