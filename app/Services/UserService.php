@@ -148,7 +148,7 @@ class UserService extends Service
         try {
             $products = Product::with(['variants' => function ($query) {
                     //بدي رجع اقل سعر للمنتج من بين كل الفاريانتس
-                    $query->select('id', 'product_id', 'price')
+                    $query->select('id', 'product_id', 'price', 'is_dollar')
                         ->where('is_active', true)
                         ->orderBy('price', 'asc')
                         ->limit(1);
