@@ -36,7 +36,12 @@ class ProductService extends Service
     public function getProductById(Product $product): array
     {
         try {
-            $product->load(['category:id,name', 'variants', 'variants.activeOffer', 'ratings']);
+            $product->load([
+                'category:id,name',
+                'variants' => fn ($query) => $query->where('is_active', true),
+                'variants.activeOffer',
+                'ratings',
+            ]);
             $data = [
                 'id' => $product->id,
                 'category_name' => $product->category?->name,
