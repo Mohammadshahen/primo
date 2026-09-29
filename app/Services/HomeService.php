@@ -67,7 +67,7 @@ class HomeService extends Service
                 'category_name' => $product->category?->name,
                 'name' => $product->name,
                 'image' => $product->image,
-                'price' => $product->variants->first()->price ?? null,
+                'price' => round((float) $product->variants->first()->price, 2),
                 'ratings' => $product->ratings->avg('rating'),
             ];
         })->values();
@@ -102,11 +102,11 @@ class HomeService extends Service
                 'from' => $offer->from->toDateString(),
                 'to' => $offer->to->toDateString(),
                 // 'discount_percentage' => $offer->discount_percentage,
-                'discount_value' => $offer->discount_value,
+                'discount_value' => round((float) $offer->discount_value, 2),
                 'product_name' => $offer->variant->product->name,
                 'image' => $offer->variant->product->image,
                 'property' => $offer->variant->property,
-                'variant_price' => $offer->variant->price,
+                'variant_price' => round((float) $offer->variant->price, 2),
                 'variant_stock' => $offer->variant->stock,
                 'variant_product' => $offer->variant,
             ];
@@ -120,9 +120,9 @@ class HomeService extends Service
             $startOfWeek = Carbon::now()->startOfWeek(Carbon::SUNDAY)->startOfDay();
             $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY)->endOfDay();
 
-            $weeklyTotal = (float) Ordar::where('status', 'completed')
+            $weeklyTotal = round((float) Ordar::where('status', 'completed')
                 ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                ->sum('total_amount');
+                ->sum('total_amount'), 2);
 
             $weeklyOrdersCount = Ordar::query()
                 ->where('status', 'completed')
@@ -130,7 +130,7 @@ class HomeService extends Service
                 ->count();
 
             return [
-                'total_amount' => (float) Ordar::where('status', 'completed')->sum('total_amount'),
+                'total_amount' => round((float) Ordar::where('status', 'completed')->sum('total_amount'), 2),
                 'weekly_total_amount' => $weeklyTotal,
                 'pending_orders_count' => Ordar::query()->where('status', 'pending')->count(),
                 'weekly_orders_count' => $weeklyOrdersCount,

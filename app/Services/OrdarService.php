@@ -44,6 +44,7 @@ class OrdarService extends Service
                 $price = $price_old * $item->count;
                 $result['item_price'] += $price;
             }
+            $result['item_price'] = round($result['item_price'], 2);
 
             $result['distance'] = 0;
             $result['delivery_price'] = 0;
@@ -53,10 +54,10 @@ class OrdarService extends Service
             if ($data['is_delivery'] ?? false) {
                 $result['distance'] = $this->calculateDistance($data['address_id'] ?? null);
                 $result['delivery_price'] = $result['distance'] * $result['delivery_fee_for_meter'];
-                $result['delivery_price'] = round($result['delivery_price']);
+                $result['delivery_price'] = round($result['delivery_price'], 2);
             }
 
-            $result['total_price'] = $result['item_price'] + $result['delivery_price'];
+            $result['total_price'] = round($result['item_price'] + $result['delivery_price'], 2);
 
             return [
                 'item_price' => $result['item_price'],
@@ -230,10 +231,12 @@ class OrdarService extends Service
                     'image' => $product->image,
                     'quantity' => $item->count,
                     'property' => $variant->property,
-                    'price' => $variant->price,
+                    'price' => round((float) $variant->price, 2),
                     'note' => $item->note,
                     'has_active_offer' => $variant->has_active_offer,
-                    'new_price' => $variant->has_active_offer ? $variant->price - $variant->offer->discount_value : null,
+                    'new_price' => $variant->has_active_offer
+                        ? round((float) $variant->price - (float) $variant->offer->discount_value, 2)
+                        : null,
 
                 ];
             });

@@ -204,6 +204,10 @@ class CartService extends Service
     {
         $variant = $item->variant;
         $product = $variant?->product;
+        $variantPrice = (float) ($variant?->price ?? 0);
+        $discountAmount = $variant?->has_active_offer
+            ? (float) $variant->activeOffer->discount_value
+            : 0;
 
         return [
             'id' => $item->id,
@@ -211,13 +215,13 @@ class CartService extends Service
             'product_name' => $product?->name,
             'product_image' => $product?->image,
             'variant_property' => $variant?->property,
-            'variant_price' => (float) $variant?->price,
+            'variant_price' => round($variantPrice, 2),
             'quantity' => (int) $item->count,
             'note' => $item->note,
             'has_active_offer' => (bool) $variant?->has_active_offer,
-            'discount_amount' => (float) ($variant?->has_active_offer ? $variant?->activeOffer->discount_value : 0),
-            'new_price' => (float) ($variant?->price - ($variant?->has_active_offer ? $variant?->activeOffer->discount_value : 0)),
-            'total_price' => (float) ($variant?->price * $item->count),
+            'discount_amount' => round($discountAmount, 2),
+            'new_price' => round($variantPrice - $discountAmount, 2),
+            'total_price' => round($variantPrice * $item->count, 2),
             'is_available' => (bool) ($variant?->is_active && $product?->is_active),
             'stock_in_store' => (int) $variant?->stock,
         ];

@@ -52,16 +52,21 @@ class ProductService extends Service
                 'ratings' => $product->ratings->avg('rating'),
                 'ratings_count' => $product->ratings->count(),
                 'variants' => $product->variants->map(function ($variant) {
+                    $price = (float) $variant->price;
+                    $discountAmount = $variant->has_active_offer
+                        ? (float) $variant->activeOffer->discount_value
+                        : 0;
+
                     return [
                         'id' => $variant->id,
-                        'price' => $variant->price,
+                        'price' => round($price, 2),
                         'is_dollar' => $variant->is_dollar,
                         'stock' => $variant->stock,
                         'property' => $variant->property,
                         'is_active' => $variant->is_active,
                         'has_active_offer' => $variant->has_active_offer,
-                        'discount_amount' => $variant->has_active_offer ? $variant->activeOffer->discount_value : 0,
-                        'new_price' => $variant->price - ($variant->has_active_offer ? $variant->activeOffer->discount_value : 0),
+                        'discount_amount' => round($discountAmount, 2),
+                        'new_price' => round($price - $discountAmount, 2),
                     ];
                 }),
             ];

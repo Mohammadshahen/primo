@@ -55,7 +55,7 @@ class VariantController extends Controller
                 'product_name' => $variant->product?->name,
                 'bayan_id' => $variant->bayan_id,
                 'property' => $variant->property,
-                'price' => $variant->price,
+                'price' => round((float) $variant->price, 2),
                 'is_dollar' => $variant->is_dollar,
                 'stock' => $variant->stock,
                 'is_active' => $variant->is_active,

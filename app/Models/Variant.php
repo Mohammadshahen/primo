@@ -66,7 +66,7 @@ class Variant extends Model
         $basePrice = (float) ($value ?? 0);
 
         if (! $this->is_dollar || $this->shouldShowAdminPrice()) {
-            return $basePrice;
+            return round($basePrice, 2);
         }
 
         $dollarValue = (float) Setting::getValue('dollar_value', 1.0);

@@ -38,7 +38,7 @@ class Offer extends Model
         $discountValue = (float) ($value ?? 0);
 
         if (! $this->variant?->is_dollar || $this->shouldShowAdminPrice()) {
-            return $discountValue;
+            return round($discountValue, 2);
         }
 
         $dollarValue = (float) Setting::getValue('dollar_value', 1.0);

@@ -17,7 +17,7 @@ class SettingService extends Service
 
             DB::commit();
 
-            return ['delivery_price' => $price];
+            return ['delivery_price' => round($price, 2)];
         } catch (Exception $e) {
             DB::rollBack();
             $this->logException($e, __METHOD__ . ' updateDeliveryPrice');
@@ -32,7 +32,7 @@ class SettingService extends Service
     public function getDeliveryPrice(): float
     {
         try {
-            return (float) Setting::getValue('delivery_price', 0.0);
+            return round((float) Setting::getValue('delivery_price', 0.0), 2);
         } catch (Exception $e) {
             $this->logException($e, __METHOD__ . ' getDeliveryPrice');
             $this->throwExceptionJson('فشل في جلب سعر التوصيل', 500);

@@ -156,7 +156,7 @@ class UserService extends Service
                     $query->where('user_id', $user->id);
                 })->get()->map(function ($product) {
                     if ($product->variants->isNotEmpty()) {
-                        $product->price = $product->variants->first()->price;
+                        $product->price = round((float) $product->variants->first()->price, 2);
                     } else {
                         // تعيين سعر افتراضي أو تجاهل المنتج
                         $product->price = 0; // أو null
